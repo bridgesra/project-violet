@@ -2,7 +2,7 @@ import openai
 import platform
 if platform.system() != 'Windows':
     import pexpect
-import datetime
+from Blue_Lagoon.honeypot_tools import stop_dockers, start_dockers
 import config
 import os
 import time
@@ -29,9 +29,10 @@ def start_ssh():
         ssh.expect(r'└─\x1b\[1;31m#', timeout=60)
         ssh.before.strip()
         return ssh
-    except pexpect.exceptions.EOF:
-        print("Got EOF error, trying again")
-        time.sleep(60)
+    except pexpect.exceptions.EOF:  # ONLY USE THIS WHEN RUNNING NO_RECONFIG
+        print("Got EOF error, restarting dockers")
+        stop_dockers()
+        start_dockers()
         return start_ssh()
 
 def send_terminal_command(connection, command):
