@@ -21,7 +21,7 @@ max_session_length = 1
 # Reconfiguration settings 
 reset_every_reconfig = True
 ## Basic reconfiguration
-interval: int = 1
+ba_interval: int = 1
 ## Mean increase reconfiguration
 mi_variable: str = "techniques"
 mi_tolerance: float = 0.5
