@@ -36,7 +36,7 @@ def main():
     RESET  = "\033[0m"
     print(f"{BOLD}New Configuration: configuration {config_counter}{RESET}")
 
-    reconfigurator = select_reconfigurator(config.reconfig_method)
+    reconfigurator = select_reconfigurator()
     reconfigurator.reset()
 
     if not config.simulate_command_line:

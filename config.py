@@ -31,6 +31,10 @@ mi_reset_techniques: bool = True
 en_variable: str = "techniques"
 en_window_size: int = 1
 en_tolerance: float = 1e-2
+## T-test reconfiguration
+tt_variable: str = "session_length"
+tt_tolerance: float = 1e-2
+tt_confidence: float = 0.95
 
 # Other
 ISO_FORMAT = "%Y-%m-%dT%H_%M_%S"

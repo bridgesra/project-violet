@@ -3,7 +3,7 @@ import datetime
 import os
 import json
 from Red.reconfiguration import EntropyReconfigCriterion, BasicReconfigCriterion, \
-    MeanIncreaseReconfigCriterion, NeverReconfigCriterion
+    MeanIncreaseReconfigCriterion, NeverReconfigCriterion, TTestReconfigCriterion
 from Red.model import ReconfigCriteria
 
 def create_experiment_folder(experiment_name=None):
@@ -30,7 +30,6 @@ def create_experiment_folder(experiment_name=None):
     return path
 
 def create_metadata():
-
     md = {
         "llm_model_sangria": config.llm_model_sangria,
         "llm_model_config": config.llm_model_config,
@@ -48,14 +47,17 @@ def create_metadata():
             "mi_reset_techniques": config.mi_reset_techniques,
             "en_variable": config.en_variable,
             "en_window_size": config.en_window_size,
-            "en_tolerance": config.en_tolerance
+            "en_tolerance": config.en_tolerance,
+            "tt_variable": config.tt_variable,
+            "tt_tolerance": config.tt_tolerance,
+            "tt_confidence": config.tt_confidence,
         }
     }
 
     return md
 
-def select_reconfigurator(reconfigurator_method: ReconfigCriteria):
-    match reconfigurator_method:
+def select_reconfigurator():
+    match config.reconfig_method:
         case ReconfigCriteria.NO_RECONFIG:
             reconfigurator = NeverReconfigCriterion(
                     config.reset_every_reconfig
@@ -78,6 +80,13 @@ def select_reconfigurator(reconfigurator_method: ReconfigCriteria):
                     config.en_variable,
                     config.en_tolerance,
                     config.en_window_size,
+                    config.reset_every_reconfig
+                )
+        case ReconfigCriteria.T_TEST:
+                reconfigurator = TTestReconfigCriterion(
+                    config.tt_variable,
+                    config.tt_tolerance,
+                    config.tt_confidence,
                     config.reset_every_reconfig
                 )
         case _:

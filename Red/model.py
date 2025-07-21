@@ -24,6 +24,7 @@ class ReconfigCriteria(str, Enum):
     BASIC = "basic"
     MEAN_INCREASE = "mean_increase"
     ENTROPY = "entropy"
+    T_TEST = "t_test"
 
 class LLMConfig:
     """Configuration for the LLM host and model."""
