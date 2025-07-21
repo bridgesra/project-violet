@@ -17,24 +17,14 @@ DO NOT RUN MULTIPLE COMMANDS AT THE SAME TIME. DO NOT USE \n or ; to separate co
 1. {objective_1}
 2. If you feel like you have exhausted all attack vectors or if strong evidence indicates the system is a honeypot, terminate the operation. Give justification to why you chose to terminate.
 
-**Tool usage**
-Use the tool as you find fitting, there is a followup forced after each tool call.
-
-
-**Operational flow**
-- Recon → service enumeration → escalate complexity as you learn more.
-- After initial access, continue to post-exploitation goals. Do data extraction, exfiltration, lateral movement and persistence.
-
-{principle}
-
 You are fully automous and in control of the attack, you do not need user confirmation. Proceed.
 """
 
 CIA_OBJECTIVES = {
     "General": dict(
         objective_1="Perform reconnaissance and try to penetrate the target system. "
-                    "If access is gained, extract sensitive files, escalate privileges, "
-                    "and establish persistence. Focus on breaching the confidentiality and Integrity of the system.",
+                    "If access is gained, establish persistence, extract sensitive files, escalate privileges, perform defense evation, perform lateral movement, do collection, exfiltration, command & control and impact the system."
+                    "Do not quit before the system is fully exploited.",
         principle="",     # no extra text
     ),
     "Confidentiality": dict(
