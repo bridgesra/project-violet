@@ -5,18 +5,18 @@ from Red.attacker_prompts import AttackerPrompts
 experiment_name = ""
 
 # Experiment settings
-llm_model_sangria = LLMModel.O4_MINI
+llm_model_sangria = LLMModel.GPT_4_1_MINI
 llm_model_config = LLMModel.GPT_4_1_MINI
-attacker_prompt: str = AttackerPrompts.CYCLE
-reconfig_method: ReconfigCriteria = ReconfigCriteria.BASIC
+attacker_prompt: str = AttackerPrompts.GENERAL
+reconfig_method: ReconfigCriteria = ReconfigCriteria.NO_RECONFIG
 
 # General settings
 simulate_command_line = False
 
 # Session settings
-num_of_attacks = 100
+num_of_attacks = 400
 min_num_of_attacks_reconfig = 0
-max_session_length = 1
+max_session_length = 100
 
 # Reconfiguration settings 
 reset_every_reconfig = True
