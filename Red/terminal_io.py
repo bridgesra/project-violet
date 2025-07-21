@@ -59,8 +59,10 @@ def send_terminal_command(connection, command):
         matched_pattern = connection.match.group(0) if connection.match and connection.match is not pexpect.TIMEOUT else ""
         command_response2 = f"{connection.before.strip()}{matched_pattern}"
 
-
         return command_response + command_response2
+    except UnicodeDecodeError:
+        return connection.before.strip() # Maybe works?
+        
 
 command_messages = [
     {
