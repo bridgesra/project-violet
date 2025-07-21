@@ -71,35 +71,7 @@ session_entropy_techniques_data = [measure_entropy_techniques(session) for sessi
 entropy_session_length_data = measure_entropy_session_length(combined_sessions)
 session_entropy_session_length_data = [measure_entropy_session_length(session) for session in sessions_list]
 
-# %% scrap code to see how big the difference is 
-print("All techniques:")
-attack_tech = [tactic.split(":") for tactic in mitre_dist_data["techniques"]]
-attack_techs = []
-for tactic in attack_tech:
-    if len(tactic) > 1:
-        attack_techs.append({"id": tactic[0], "name": tactic[1]})
 
-m_tactics = retrieve_unique_techniques()
-m_tactics_formated = [f"{tactic['id']}:{tactic['name']}" for tactic in m_tactics]
-
-name_list = []
-
-for tactic in attack_techs:
-    print(tactic['id'])
-    # retrive all id from m_tactics list of objects
-    print(m_tactics)
-    if tactic['id'] in [tactic['id'] for tactic in m_tactics]:
-        # Find the matching tactic by id
-        matching_tactic = next((m_tactic for m_tactic in m_tactics if m_tactic['id'] == tactic['id']), None)
-        if matching_tactic:
-            name_list.append({'name': tactic['name'], 'matching_name': matching_tactic['name']})
-
-print(f"Number of techniques: {(attack_techs)}")
-print(f"number of matches: {sum([tac['name'] == tac['matching_name'] for tac in name_list])}")
-
-print("techniques length:", len(mitre_dist_data["techniques"]))
-
-print(mitre_dist_data["techniques"].keys())
 
 #%% Plotting cumulative attack of unique techniqes vs sessions
 
@@ -217,24 +189,6 @@ plt.tight_layout()
 plt.show()
 
 
-#%% Plotting entropy of techniques
-
-entropies = [list(result["entropies"]) for result in session_entropy_techniques_data]
-entropies = sum(entropies, [])
-
-plt.figure(figsize=(12, 6))
-plt.plot(entropies, marker="o", linestyle="-", c=colors.scheme[0])
-plt.title("Config entropy")
-plt.xlabel("Session")
-plt.ylabel("Entropy of unique techniques")
-
-for index in reconfig_indices:
-    plt.axvline(index - 0.5, color=colors.black, linestyle="--", alpha=0.2)
-
-plt.ylim(bottom=0)
-# plt.grid()
-plt.legend()
-plt.show()
 # %%
 
 # Simple moving average
@@ -245,92 +199,3 @@ eps = 5e-3
 window_size = 2
 smoothed = moving_average(entropy_techniques_data["entropies"], window_size)
 diffs = np.abs(np.diff(smoothed, prepend=np.ones((window_size,)) * np.inf))
-
-plt.figure(figsize=(12, 6))
-plt.plot(entropy_techniques_data["entropies"], marker="", linestyle="-", c=colors.scheme[0])
-plt.plot(diffs, marker="", linestyle="-", c=colors.scheme[1])
-plt.scatter(np.arange(len(diffs))[diffs >= eps], entropy_techniques_data["entropies"][diffs >= eps], c=colors.scheme[0])
-plt.scatter(np.arange(len(diffs))[diffs < eps], entropy_techniques_data["entropies"][diffs < eps], c=colors.scheme[-1])
-plt.title("Experiment entropy of unique techniques")
-plt.xlabel("Session")
-plt.ylabel("Entropy of unique techniques")
-
-for index in reconfig_indices:
-    plt.axvline(index - 0.5, color=colors.black, linestyle="--", alpha=0.2)
-
-plt.ylim(bottom=0)
-# plt.grid()
-plt.legend()
-plt.show()
-
-# %% Entropy tactics all session
-
-plt.figure(figsize=(12, 6))
-plt.plot(entropy_tactics_data["entropies"], marker="o", linestyle="-", c=colors.scheme[0])
-plt.title("Experiment entropy of unique tactics")
-plt.xlabel("Session")
-plt.ylabel("Entropy of unique tactics")
-
-for index in reconfig_indices:
-    plt.axvline(index - 0.5, color=colors.black, linestyle="--", alpha=0.2)
-
-plt.ylim(bottom=0)
-# plt.grid()
-plt.legend()
-plt.show()
-
-
-#%% Plotting entropy of techniques every config
-
-entropies = [list(result["entropies"]) for result in session_entropy_tactics_data]
-entropies = sum(entropies, [])
-
-plt.figure(figsize=(12, 6))
-plt.plot(entropies, marker="o", linestyle="-", c=colors.scheme[0])
-plt.title("Config entropy")
-plt.xlabel("Session")
-plt.ylabel("Entropy of unique tactics")
-
-for index in reconfig_indices:
-    plt.axvline(index - 0.5, color=colors.black, linestyle="--", alpha=0.2)
-
-plt.ylim(bottom=0)
-# plt.grid()
-plt.legend()
-plt.show()
-
-
-#%% Plotting entropy of session length
-
-entropies = [list(result["entropies"]) for result in session_entropy_session_length_data]
-entropies = sum(entropies, [])
-
-plt.figure(figsize=(12, 6))
-plt.plot(entropies, marker="o", linestyle="-", c=colors.scheme[0])
-plt.title("Config entropy of session length")
-plt.xlabel("Session")
-plt.ylabel("Entropy of session length")
-
-for index in reconfig_indices:
-    plt.axvline(index - 0.5, color=colors.black, linestyle="--", alpha=0.2)
-
-plt.ylim(bottom=0)
-# plt.grid()
-plt.legend()
-plt.show()
-
-# %%
-plt.figure(figsize=(12, 6))
-plt.plot(entropy_session_length_data["entropies"], marker="o", linestyle="-", c=colors.scheme[0])
-plt.title("Experiment entropy of session length")
-plt.xlabel("Session")
-plt.ylabel("Entropy of session length")
-
-for index in reconfig_indices:
-    plt.axvline(index - 0.5, color=colors.black, linestyle="--", alpha=0.2)
-
-plt.ylim(bottom=0)
-# plt.grid()
-plt.legend()
-plt.show()
-# %%
