@@ -29,34 +29,28 @@ def create_experiment_folder(experiment_name=None):
 
     return path
 
-class MetaDataObject:
-    def __init__(self, llm_model_sangria, llm_model_honeypot, num_of_attacks, min_num_of_attacks_reconfig, max_session_length, reconfig_method):
-        self.llm_model_sangria = llm_model_sangria
-        self.llm_model_honeypot = llm_model_honeypot
-        self.num_of_attacks = num_of_attacks
-        self.min_num_of_attacks_reconfig = min_num_of_attacks_reconfig
-        self.max_session_length = max_session_length
-        self.reconfig_method = reconfig_method
-
-    def to_dict(self):
-        return {
-            "llm_model_sangria": self.llm_model_sangria,
-            "llm_model_honeypot": self.llm_model_honeypot,
-            "num_of_attacks": self.num_of_attacks,
-            "min_num_of_attacks_reconfig": self.min_num_of_attacks_reconfig,
-            "max_session_length": self.max_session_length,
-            "reconfig_method": self.reconfig_method
-        }
-
 def create_metadata():
-    md = MetaDataObject(
-        llm_model_sangria=config.llm_model_sangria,
-        llm_model_honeypot=config.llm_model_config,
-        num_of_attacks=config.num_of_attacks,
-        min_num_of_attacks_reconfig=config.min_num_of_attacks_reconfig,
-        max_session_length=config.max_session_length,
-        reconfig_method=config.reconfig_method
-    )
+
+    md = {
+        "llm_model_sangria": config.llm_model_sangria,
+        "llm_model_config": config.llm_model_config,
+        "simulate_command_line": config.simulate_command_line,
+        "num_of_attacks": config.num_of_attacks,
+        "min_num_of_attacks_reconfig": config.min_num_of_attacks_reconfig,
+        "max_session_length": config.max_session_length,
+        "reconfig_method": config.reconfig_method,
+        "reconfig": {
+            "reset_every_reconfig": config.reset_every_reconfig,
+            "ba_interval": config.ba_interval,
+            "mi_variable": config.mi_variable,
+            "mi_tolerance": config.mi_tolerance,
+            "mi_window_size": config.mi_window_size,
+            "mi_reset_techniques": config.mi_reset_techniques,
+            "en_variable": config.en_variable,
+            "en_window_size": config.en_window_size,
+            "en_tolerance": config.en_tolerance
+        }
+    }
 
     return md
 
@@ -68,7 +62,7 @@ def select_reconfigurator(reconfigurator_method: ReconfigCriteria):
                 )
         case ReconfigCriteria.BASIC:
             reconfigurator = BasicReconfigCriterion(
-                    config.interval,
+                    config.ba_interval,
                     config.reset_every_reconfig
                 )
         case ReconfigCriteria.MEAN_INCREASE:
