@@ -24,7 +24,7 @@ def create_experiment_folder(experiment_name=None):
     metadata_path = os.path.join(path, "metadata.json")
 
     with open(metadata_path, 'w') as f:
-        json.dump(metadata.to_dict(), f, indent=2)
+        json.dump(metadata, f, indent=2)
         print(f"Metadata saved to {metadata_path}")
 
     return path
