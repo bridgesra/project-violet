@@ -16,7 +16,7 @@ simulate_command_line = False
 
 # Session settings
 num_of_attacks = 400
-min_num_of_attacks_reconfig = 0
+min_num_of_attacks_reconfig = 5
 max_session_length = 100
 
 # Reconfiguration settings 
@@ -34,7 +34,7 @@ en_window_size: int = 1
 en_tolerance: float = 1e-2
 ## T-test reconfiguration
 tt_variable: str = "session_length"
-tt_tolerance: float = 1e-2
+tt_tolerance: float = 1
 tt_confidence: float = 0.95
 
 # Other

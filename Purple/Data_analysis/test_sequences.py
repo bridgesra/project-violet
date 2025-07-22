@@ -73,7 +73,7 @@ entropy_session_length_data = measure_entropy_session_length(combined_sessions)
 session_entropy_session_length_data = [measure_entropy_session_length(session) for session in sessions_list]
 
 # %%
-sequence_data = measure_command_sequences(combined_sessions)
+sequence_data = measure_tactic_sequences(combined_sessions)
 plt.plot(sequence_data["min_distances"])
 plt.show()
 
@@ -143,8 +143,9 @@ for i in range(len(sequence_data["indexed_sequences"])):
 mus = np.array(mus)
 margins = np.array(margins)
 
-eps = 1
-mask = margins < eps
+window_size = 5
+eps = 2
+mask = (margins < eps) & (np.array([False] * window_size + [True] * (len(mus) - window_size)))
 values = np.array(range(len(mus)))
 
 plt.errorbar(values, mus, margins)

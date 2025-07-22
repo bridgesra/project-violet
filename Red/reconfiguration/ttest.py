@@ -1,11 +1,9 @@
 import numpy as np
 from scipy.stats import t
 from typing import List
-from collections import Counter
 from Red.reconfiguration.abstract import AbstractReconfigCriterion
 
 def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:
-    print(session_lengths)
     s = session_lengths.std(ddof=1)
     n = session_lengths.shape[0]
 
@@ -15,10 +13,6 @@ def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> fl
     return float(moe)
 
 VARIABLES = ["session_length"]
-
-def get_prob_dist(data: Counter) -> List[float]:
-    total = sum(data.values())
-    return [freq / total for freq in data.values()]
 
 class TTestReconfigCriterion(AbstractReconfigCriterion):
     def __init__(self, variable: str, tolerance: float, 
@@ -38,7 +32,7 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
     def update(self, session):
         match self.variable:
             case "session_length":
-                self.session_lengths.append(session.get("session_length"))
+                self.session_lengths.append(int(session.get("length")))
         self.moes.append(
             compute_confidence_interval(
                 np.array(self.session_lengths),
