@@ -36,7 +36,7 @@ from Utils.jsun import load_json
 import numpy as np
 from Purple.Data_analysis.metrics import measure_session_length, measure_mitre_distribution, \
     measure_entropy_session_length, measure_entropy_techniques, measure_entropy_tactics, \
-    measure_sequences
+    measure_tactic_sequences, measure_technique_sequences, measure_command_sequences
 
 path = logs_path / selected_experiment
 configs = [name for name in os.listdir(path) if str(name).startswith("hp_config")]
@@ -72,19 +72,88 @@ session_entropy_techniques_data = [measure_entropy_techniques(session) for sessi
 entropy_session_length_data = measure_entropy_session_length(combined_sessions)
 session_entropy_session_length_data = [measure_entropy_session_length(session) for session in sessions_list]
 
+# %%
+sequence_data = measure_command_sequences(combined_sessions)
+plt.plot(sequence_data["min_distances"])
+plt.show()
 
 # %%
-import Levenshtein
+import editdistance
+from collections import Counter
 from itertools import combinations
-sequence_data = measure_sequences(combined_sessions)
-print(sequence_data["indexed_tactic_sequences"])
+
+print(sequence_data["indexed_sequences"])
+print(len([seq for seq in sequence_data["indexed_sequences"] if seq]))
 distances = []
 for i, j in combinations(
-        sequence_data["indexed_tactic_sequences"],
+        [seq for seq in sequence_data["indexed_sequences"] if seq],
         2
     ):
-    distances.append(Levenshtein.distance(i,j))
+    distances.append(editdistance.eval(i,j))
+distances = np.array(distances)
+freq = Counter(distances)
 
-plt.plot(sorted(distances, reverse=True))
+import numpy as np
+from scipy.stats import t
 
+def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:
+    s = session_lengths.std(ddof=1)
+    n = session_lengths.shape[0]
+
+    t_crit = t.ppf(1 - alpha/2, df=n - 1)
+    moe = t_crit * (s / np.sqrt(n))
+
+    return float(moe)
+
+# prepare data for plotting
+x = sorted(freq.keys())
+y = [freq[d] for d in x]
+
+# plot
+plt.bar(x, y, align='center', width=0.8)
+plt.axvline(np.mean(distances), color="k")
+plt.xlabel('Levenshtein distance')
+plt.ylabel('Count')
+plt.title('Distribution of Pairwise Sequence Distances')
+plt.show()
+
+mean_dist = np.mean(distances)
+moe = compute_confidence_interval(distances, 0.05)
+
+
+# %%
+from collections import Counter
+dists = Counter()
+dists_list = []
+margins = []
+mus = []
+import editdistance
+
+for i in range(len(sequence_data["indexed_sequences"])):
+    for j in range(0, i):
+        seq_i = sequence_data["indexed_sequences"][i]
+        seq_j = sequence_data["indexed_sequences"][j]
+        if seq_i and seq_j:
+            dist = editdistance.eval(seq_i, seq_j)
+            dists.update([dist])
+            dists_list.append(dist)
+    moe = compute_confidence_interval(np.array(dists_list), 0.05)
+    margins.append(moe)
+    mus.append(np.mean(dists_list))
+mus = np.array(mus)
+margins = np.array(margins)
+
+eps = 1
+mask = margins < eps
+values = np.array(range(len(mus)))
+
+plt.errorbar(values, mus, margins)
+plt.scatter(values[mask], mus[mask], color="orange")
+plt.xlabel("Sequence")
+plt.ylabel("Mean")
+plt.show()
+
+# %%
+
+pprint.pprint(sequence_data)
 # %%

@@ -5,6 +5,7 @@ from collections import Counter
 from Red.reconfiguration.abstract import AbstractReconfigCriterion
 
 def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:
+    print(session_lengths)
     s = session_lengths.std(ddof=1)
     n = session_lengths.shape[0]
 

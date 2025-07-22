@@ -5,8 +5,10 @@ from Style import colors
 
 import matplotlib.pyplot as plt
 
-def plot_entropy(combined_sessions: List[Dict[str, Any]],
-        sessions_list: List[List[Dict[str, Any]]], reconfig_indices: List[int]):
+def plot_entropy(
+        combined_sessions: List[Dict[str, Any]],
+        sessions_list: List[List[Dict[str, Any]]],
+        reconfig_indices: List[int]):
     
     tactics_entropy_data = measure_entropy_tactics(combined_sessions)
     tactics_entropy_data_list = [measure_entropy_tactics(session) for session in sessions_list]

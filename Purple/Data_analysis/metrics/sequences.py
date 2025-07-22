@@ -1,45 +1,52 @@
-from typing import Dict, List, Any, Set
+import editdistance
+import numpy as np
+from typing import Dict, List, Any, Literal, Set
 
-def measure_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
-    tactics: Set[str] = set([])
-    techniques: Set[str] = set([])
-    tactic_sequences: List[List[str]] = []
-    technique_sequences: List[List[str]] = []
+def measure_tactic_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return measure_sequences(sessions, "tactics")
+
+def measure_technique_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return measure_sequences(sessions, "techniques")
+
+def measure_command_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+    return measure_sequences(sessions, "command")
+
+def measure_sequences(sessions: List[Dict[str, Any]],
+        t_name: Literal["tactics", "techniques", "command"]) -> Dict[str, Any]:
+    t_to_index: Dict[str, int] = {}
+    sequences: List[List[str]] = []
+    indexed_sequences: List[List[int]] = []
+    min_distances: List[int] = []
 
     for session in sessions:
-        tactic_seq = []
-        technique_seq = []
-
+        seq = []
         for command in session.get("full_session", []):
-            tactic = command.get("tactic", "")
-            technique = command.get("technique", "")
-            tactics.add(tactic)
-            techniques.add(technique)
-            tactic_seq.append(tactic)
-            technique_seq.append(technique)
+            t = command.get(t_name, "")
+            if t_name == "command":
+                t = t.split(" ")[0]
+            seq.append(t)
+            if t not in t_to_index:
+                t_to_index[t] = len(t_to_index)
+        indexed_seq = [t_to_index[t] for t in seq]
+        
+        if len(indexed_sequences) > 0:
+            if indexed_seq != "":
+                min_distance = min([editdistance.eval(prev_seq, indexed_seq) 
+                    for prev_seq in indexed_sequences])
+                min_distances.append(min_distance)
+            else:
+                min_distances.append(min_distances[-1])
+        else:
+            min_distances.append(np.inf)
 
-        tactic_sequences.append(tactic_seq)
-        technique_sequences.append(technique_seq)
-
-    tactic_to_index = {tactic:index for index, tactic in enumerate(tactics)}
-    technique_to_index = {technique:index for index, technique in enumerate(techniques)}
-
-    indexed_tactic_sequence = [
-        "".join([str(tactic_to_index[tactic]) for tactic in tactic_seq])
-        for tactic_seq in tactic_sequences
-    ]
-    indexed_technique_sequence = [
-        "".join([str(technique_to_index[technique]) for technique in technique_seq])
-        for technique_seq in technique_sequences
-    ]
+        sequences.append(seq)
+        indexed_sequences.append(indexed_seq)
 
     results = {
-        "tactics": tactic_to_index,
-        "techniques": technique_to_index,
-        "tactic_sequences": tactic_sequences,
-        "technique_sequences": technique_sequences,
-        "indexed_tactic_sequences": indexed_tactic_sequence,
-        "indexed_technique_sequences": indexed_technique_sequence
+        f"{t_name}": t_to_index,
+        "min_distances": min_distances,
+        "sequences": sequences,
+        "indexed_sequences": indexed_sequences,
     }
 
     return results
