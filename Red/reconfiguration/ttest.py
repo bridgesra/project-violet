@@ -1,7 +1,9 @@
+import editdistance
 import numpy as np
 from scipy.stats import t
-from typing import List
+from typing import List, Dict, Any
 from Red.reconfiguration.abstract import AbstractReconfigCriterion
+from Purple.Data_analysis.metrics import measure_tactic_sequences
 
 def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:
     s = session_lengths.std(ddof=1)
@@ -12,7 +14,7 @@ def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> fl
 
     return float(moe)
 
-VARIABLES = ["session_length"]
+VARIABLES = ["session_length", "tactic_sequences"]
 
 class TTestReconfigCriterion(AbstractReconfigCriterion):
     def __init__(self, variable: str, tolerance: float, 
@@ -26,19 +28,39 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
         super().__init__(reset_every_reconfig)
 
     def reset(self):
-        self.session_lengths: List[int] = []
+        self.values: List[float] = []
+        self.sessions: List[Dict[str, Any]]
         self.moes: List[float] = []
 
     def update(self, session):
         match self.variable:
             case "session_length":
-                self.session_lengths.append(int(session.get("length")))
-        self.moes.append(
-            compute_confidence_interval(
-                np.array(self.session_lengths),
-                self.alpha
-            )
-        )
+                self.values.append(int(session.get("length")))
+                self.moes.append(
+                    compute_confidence_interval(
+                        np.array(self.values),
+                        self.alpha
+                    )
+                )
+            case "tactic_sequences":
+                tactic_sequence_data = measure_tactic_sequences([session])
+                dists_list = []
+                for i in range(len(tactic_sequence_data["indexed_sequences"])):
+                    for j in range(0, i):
+                        seq_i = tactic_sequence_data["indexed_sequences"][i]
+                        seq_j = tactic_sequence_data["indexed_sequences"][j]
+                        if seq_i and seq_j:
+                            dist = editdistance.eval(seq_i, seq_j)
+                            dists_list.append(dist)
+                if dists_list:
+                    self.moes.append(
+                        compute_confidence_interval(
+                            np.array(dists_list),
+                            self.alpha
+                        )
+                    )
         
     def should_reconfigure(self):
+        if not self.moes:
+            return False
         return self.moes[-1] < self.tolerance
