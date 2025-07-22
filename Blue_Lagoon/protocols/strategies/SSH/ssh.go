@@ -61,6 +61,7 @@ func (sshStrategy *SSHStrategy) Init(servConf parser.BeelzebubServiceConfigurati
 								llmHoneypot := plugins.LLMHoneypot{
 									Histories:    histories,
 									OpenAIKey:    servConf.Plugin.OpenAISecretKey,
+									TogetherAIKey: servConf.Plugin.OpenAISecretKey,
 									Protocol:     tracer.SSH,
 									Host:         servConf.Plugin.Host,
 									Model:        servConf.Plugin.LLMModel,
@@ -70,7 +71,7 @@ func (sshStrategy *SSHStrategy) Init(servConf parser.BeelzebubServiceConfigurati
 								llmHoneypotInstance := plugins.InitLLMHoneypot(llmHoneypot)
 								if commandOutput, err = llmHoneypotInstance.ExecuteModel(sess.RawCommand()); err != nil {
 									log.Errorf("error ExecuteModel: %s, %s", sess.RawCommand(), err.Error())
-									commandOutput = "command not found"
+									commandOutput = err.Error()
 								}
 							}
 							var newEntries []plugins.Message
@@ -183,7 +184,7 @@ func (sshStrategy *SSHStrategy) Init(servConf parser.BeelzebubServiceConfigurati
 								llmHoneypotInstance := plugins.InitLLMHoneypot(llmHoneypot)
 								if commandOutput, err = llmHoneypotInstance.ExecuteModel(commandInput); err != nil {
 									log.Errorf("error ExecuteModel: %s, %s", commandInput, err.Error())
-									commandOutput = "command not found"
+									commandOutput = err.Error()
 								}
 							}
 							var newEntries []plugins.Message

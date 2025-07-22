@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/mariocandela/beelzebub/v3/tracer"
 	log "github.com/sirupsen/logrus"
@@ -19,17 +20,19 @@ const (
 	LLMPluginName                       = "LLMHoneypot"
 	openAIEndpoint                      = "https://api.openai.com/v1/chat/completions"
 	ollamaEndpoint                      = "http://localhost:11434/api/chat"
+	togetherAIEndpoint                  = "https://api.together.xyz/v1/chat/completions"
 )
 
 type LLMHoneypot struct {
-	Histories    []Message
-	OpenAIKey    string
-	client       *resty.Client
-	Protocol     tracer.Protocol
-	Provider     LLMProvider
-	Model        string
-	Host         string
-	CustomPrompt string
+	Histories     []Message
+	OpenAIKey     string
+	TogetherAIKey string
+	client        *resty.Client
+	Protocol      tracer.Protocol
+	Provider      LLMProvider
+	Model         string
+	Host          string
+	CustomPrompt  string
 }
 
 type Choice struct {
@@ -52,6 +55,29 @@ type Response struct {
 	} `json:"usage"`
 }
 
+type ChoiceT struct {
+	FinishReason string      `json:"finish_reason"`
+	Seed         uint64      `json:"seed"`
+	Logprobs     interface{} `json:"logprobs"`
+	Index        int         `json:"index"`
+	Message      MessageT    `json:"message"`
+}
+
+type ResponseT struct {
+	ID      string    `json:"id"`
+	Object  string    `json:"object"`
+	Created int       `json:"created"`
+	Model   string    `json:"model"`
+	Prompt  []string  `json:"prompt"`
+	Choices []ChoiceT `json:"choices"`
+	Usage   struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
+		CachedTokens     int `json:"cached_tokens"`
+	} `json:"usage"`
+}
+
 type Request struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
@@ -61,6 +87,11 @@ type Request struct {
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+}
+type MessageT struct {
+	Role      string        `json:"role"`
+	Content   string        `json:"content"`
+	ToolCalls []interface{} `json:"tool_calls"`
 }
 
 type Role int
@@ -80,6 +111,7 @@ type LLMProvider int
 const (
 	Ollama LLMProvider = iota
 	OpenAI
+	TogetherAI
 )
 
 func FromStringToLLMProvider(llmProvider string) (LLMProvider, error) {
@@ -88,24 +120,28 @@ func FromStringToLLMProvider(llmProvider string) (LLMProvider, error) {
 		return Ollama, nil
 	case "openai":
 		return OpenAI, nil
+	case "togetherai":
+		return TogetherAI, nil
 	default:
-		return -1, fmt.Errorf("provider %s not found, valid providers: ollama, openai", llmProvider)
+		return -1, fmt.Errorf("provider %s not found, valid providers: ollama, openai, togetherai", llmProvider)
 	}
 }
 
 func InitLLMHoneypot(config LLMHoneypot) *LLMHoneypot {
-    
-    config.client = resty.New()
-    
-    if os.Getenv("OPEN_AI_SECRET_KEY") != "" {
-        config.OpenAIKey = os.Getenv("OPEN_AI_SECRET_KEY")
-    }
-    
-    if os.Getenv("HP_MODEL") != "" {
-        config.Model = os.Getenv("HP_MODEL")
-    }
-    
-    return &config
+
+	config.client = resty.New()
+
+	if os.Getenv("OPEN_AI_SECRET_KEY") != "" {
+		config.OpenAIKey = os.Getenv("OPEN_AI_SECRET_KEY")
+	}
+	if os.Getenv("TOGETHER_AI_SECRET_KEY") != "" {
+		config.TogetherAIKey = os.Getenv("TOGETHER_AI_SECRET_KEY")
+	}
+	if os.Getenv("HP_MODEL") != "" {
+		config.Model = os.Getenv("HP_MODEL")
+	}
+
+	return &config
 }
 
 func (llmHoneypot *LLMHoneypot) buildPrompt(command string) ([]Message, error) {
@@ -171,6 +207,52 @@ func (llmHoneypot *LLMHoneypot) buildPrompt(command string) ([]Message, error) {
 	})
 
 	return messages, nil
+}
+
+func (llmHoneypot *LLMHoneypot) togetherAICaller(messages []Message) (string, error) {
+
+	var err error
+
+	model := llmHoneypot.Model
+	if model == "" {
+		return "", errors.New("togetherAI model not specified")
+	}
+
+	requestJson, err := json.Marshal(Request{
+		Model:    model,
+		Messages: messages,
+		Stream:   false,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if llmHoneypot.TogetherAIKey == "" {
+		return "", errors.New("TogetherAIKey is empty")
+	}
+
+	if llmHoneypot.Host == "" {
+		llmHoneypot.Host = togetherAIEndpoint
+	}
+
+	log.Debug(string(requestJson))
+	response, err := llmHoneypot.client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(requestJson).
+		SetAuthToken(llmHoneypot.TogetherAIKey).
+		SetResult(&ResponseT{}).
+		Post(llmHoneypot.Host)
+
+	if err != nil {
+		return "", err
+	}
+	log.Debug(response)
+
+	if len(response.Result().(*ResponseT).Choices) == 0 {
+		return "", errors.New("no choices")
+	}
+
+	return removeQuotes(response.Result().(*ResponseT).Choices[0].Message.Content), nil
 }
 
 func (llmHoneypot *LLMHoneypot) openAICaller(messages []Message) (string, error) {
@@ -263,12 +345,14 @@ func (llmHoneypot *LLMHoneypot) ExecuteModel(command string) (string, error) {
 		return llmHoneypot.ollamaCaller(prompt)
 	case OpenAI:
 		return llmHoneypot.openAICaller(prompt)
+	case TogetherAI:
+		return llmHoneypot.togetherAICaller(prompt)
 	default:
 		return "", fmt.Errorf("provider %d not found, valid providers: ollama, openai", llmHoneypot.Provider)
 	}
 }
 
 func removeQuotes(content string) string {
-	regex := regexp.MustCompile("(```( *)?([a-z]*)?(\\n)?)")
-	return regex.ReplaceAllString(content, "")
+    regex := regexp.MustCompile("(`{1,3}( *)?([a-z]*)?(\\n)?)")
+    return regex.ReplaceAllString(content, "")
 }

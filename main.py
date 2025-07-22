@@ -24,7 +24,7 @@ def main():
     base_path = create_experiment_folder(experiment_name=config.experiment_name)
     base_path = Path(base_path)
 
-    honeypot_config = get_honeypot_config(id="openai", path="")    # id=openai/togetherai/static
+    honeypot_config = get_honeypot_config(id=config.llm_provider, path="")    # id=openai/togetherai/static
     set_honeypot_config(honeypot_config)
     init_docker()
 
