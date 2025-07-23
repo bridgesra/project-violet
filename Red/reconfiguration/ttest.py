@@ -61,7 +61,7 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
                             self.alpha
                         )
                     )
-                    self.eps.append(self.tolerance * np.mean(dists_list))
+                    self.eps.append(self.tolerance * np.var(dists_list))
         
     def should_reconfigure(self):
         if not self.moes:
