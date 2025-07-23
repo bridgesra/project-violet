@@ -3,7 +3,7 @@ import datetime
 import os
 import json
 from Red.reconfiguration import EntropyReconfigCriterion, BasicReconfigCriterion, \
-    MeanIncreaseReconfigCriterion, NeverReconfigCriterion, TTestReconfigCriterion
+     NeverReconfigCriterion, TTestReconfigCriterion
 from Red.model import ReconfigCriteria
 
 def create_experiment_folder(experiment_name=None):
@@ -13,6 +13,7 @@ def create_experiment_folder(experiment_name=None):
     folder_name = f"experiment_{timestamp}"
     if experiment_name:
         folder_name = f"{experiment_name}_{timestamp}"
+        folder_name = experiment_name
 
     # create the logs folder if it doesn't exist
     path = "logs/" + folder_name
@@ -41,10 +42,6 @@ def create_metadata():
         "reconfig": {
             "reset_every_reconfig": config.reset_every_reconfig,
             "ba_interval": config.ba_interval,
-            "mi_variable": config.mi_variable,
-            "mi_tolerance": config.mi_tolerance,
-            "mi_window_size": config.mi_window_size,
-            "mi_reset_techniques": config.mi_reset_techniques,
             "en_variable": config.en_variable,
             "en_window_size": config.en_window_size,
             "en_tolerance": config.en_tolerance,
@@ -65,14 +62,6 @@ def select_reconfigurator():
         case ReconfigCriteria.BASIC:
             reconfigurator = BasicReconfigCriterion(
                     config.ba_interval,
-                    config.reset_every_reconfig
-                )
-        case ReconfigCriteria.MEAN_INCREASE:
-            reconfigurator = MeanIncreaseReconfigCriterion(
-                    config.mi_variable,
-                    config.mi_tolerance,
-                    config.mi_window_size,
-                    config.mi_reset_techniques,
                     config.reset_every_reconfig
                 )
         case ReconfigCriteria.ENTROPY:

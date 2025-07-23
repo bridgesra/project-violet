@@ -163,6 +163,9 @@ pprint.pprint(sequence_data)
 # %%
 
 session_all_lengths = [measure_session_length(session)["session_lengths"] for session in sessions_list]
+n = len(combined_sessions) // 2
+fake_sessions_list = [combined_sessions[i:i + n] for i in range(0, len(combined_sessions), n)]
+session_all_lengths = [measure_session_length(session)["session_lengths"] for session in fake_sessions_list]
 margins = []
 mus = []
 eps = 10
@@ -174,13 +177,14 @@ for session_lengths in session_all_lengths:
         moe = compute_confidence_interval(session_lengths[0:i], 0.05)
         margins.append(moe)
         mus.append(np.mean(session_lengths[0:i]))
-        eps.append(0.008 * np.var(session_lengths[0:i]))
+        eps.append(0.003 * np.var(session_lengths[0:i]))
 
 mus = np.array(mus)
 margins = np.array(margins)
 eps = np.array(eps)
 
 window_size = 5
+eps = 10
 mask = (margins <= eps)
 values = np.array(range(len(mus)))
 
@@ -191,6 +195,6 @@ plt.xlabel("Sequence")
 plt.ylabel("Mean")
 plt.scatter(values, length_data["session_lengths"], color="orange", s=1)
 plt.show()
-print(mus[mask])
+print(mus * mask)
 
 # %%
