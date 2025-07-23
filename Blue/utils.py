@@ -2,6 +2,9 @@ import re
 import numpy as np
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+import os
+
 
 def extract_json(text):
     """
@@ -35,3 +38,37 @@ def clean_and_finalize_config(config):
             service.pop("plugin", None)
     return config
     
+
+
+def acquire_config_lock():
+    """
+    Acquire an exclusive lock for honeypot configuration operations.
+    Returns the lock file object.
+    """
+    target_dir = Path(__file__).resolve().parent.resolve().parent / "Blue_Lagoon" / "configurations" / "services"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    lock_file_path = target_dir / ".config_lock"
+    lock_file = open(lock_file_path, "w")
+    if os.name == "posix":
+        import fcntl
+        print("acquiring lock")
+        fcntl.lockf(lock_file.fileno(), fcntl.LOCK_EX)
+        print("lock acquired")
+    return lock_file
+
+
+def release_config_lock(lock_file):
+    """
+    Release the configuration lock and close the lock file.
+    
+    Args:
+        lock_file: The lock file object to release
+        context: Optional context string for logging
+    """
+    if os.name == "posix":
+        import fcntl
+        print("releasing lock")
+        fcntl.lockf(lock_file.fileno(), fcntl.LOCK_UN)
+        print("lock released")
+    lock_file.close()
+

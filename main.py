@@ -8,13 +8,11 @@ from pathlib import Path
 
 from Red import sangria_config
 from Red.sangria import run_single_attack
-from Red.model import ReconfigCriteria
 from Red.extraction import extract_session
-from Red.reconfiguration import EntropyReconfigCriterion, BasicReconfigCriterion, \
-    MeanIncreaseReconfigCriterion, NeverReconfigCriterion
 
 from Blue.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
-from Blue_Lagoon.honeypot_tools import init_docker, start_dockers, stop_dockers
+from Blue.utils import acquire_config_lock, release_config_lock
+from Blue_Lagoon.honeypot_tools import start_dockers, stop_dockers
 
 from Utils.meta import create_experiment_folder, select_reconfigurator
 from Utils.jsun import save_json_to_file, append_json_to_file
@@ -24,9 +22,10 @@ def main():
     base_path = create_experiment_folder(experiment_name=config.experiment_name)
     base_path = Path(base_path)
 
-    honeypot_config = get_honeypot_config(id=config.llm_provider, path="")    # id=openai/togetherai/static
+    honeypot_config = get_honeypot_config(id=config.llm_provider, path="")
+
+    lock_file = acquire_config_lock()
     set_honeypot_config(honeypot_config)
-    init_docker()
 
     config_counter = 1
     config_attack_counter = 0
@@ -41,6 +40,7 @@ def main():
 
     if not config.simulate_command_line:
         start_dockers()
+    release_config_lock(lock_file)
 
     config_path = base_path / f"hp_config_{config_counter}"
     full_logs_path = config_path / "full_logs"
@@ -50,6 +50,7 @@ def main():
         save_json_to_file(honeypot_config, config_path / f"honeypot_config.json")
 
     for i in range(config.num_of_attacks):
+        config_attack_counter += 1
         os.makedirs(config_path, exist_ok=True)
         print(f"{BOLD}Attack {i+1} / {config.num_of_attacks}, configuration {config_counter}{RESET}")
 
@@ -74,6 +75,8 @@ def main():
                 stop_dockers()
 
             config_id, honeypot_config = generate_new_honeypot_config(base_path)
+            
+            lock_file = acquire_config_lock()
             set_honeypot_config(honeypot_config)
 
             if reconfigurator.reset_every_reconfig:
@@ -90,6 +93,8 @@ def main():
 
             if not config.simulate_command_line:
                 start_dockers()
+
+            release_config_lock(lock_file)
 
         print("\n\n")
 

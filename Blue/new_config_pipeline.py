@@ -19,7 +19,6 @@ from Blue.attack_pattern_check import attack_methods_checker
 from Blue.utils import extract_json, cosine_similarity, clean_and_finalize_config
 
 # Load environment variables (for OpenAI API key)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Set up base directory and important paths
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,6 +32,7 @@ def query_openai(prompt: str, model: str = None, temperature: float = 0.7) -> st
     Query the OpenAI LLM with a prompt and return the generated response as a string.
     Uses the model specified in config.py unless overridden.
     """
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     if model is None:
         model = llm_model_config
     openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -58,40 +58,25 @@ def set_honeypot_config(config):
     Save each service from the honeypot config as a separate YAML file in the Honeypot/configurations/services directory.
     Each file is named using the config ID and the service name.
     Before saving, clear the directory to avoid leftover files from previous runs.
-    Uses file locking to prevent concurrent access issues.
     """
     target_dir = BASE_DIR.parent / "Blue_Lagoon" / "configurations" / "services"
     target_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Create a lock file for synchronization
-    lock_file_path = target_dir / ".config_lock"
-    
-    with open(lock_file_path, "w") as lock_file:
-        try:
-            if sys.platform == "linux":
-                import fcntl
-                # Acquire exclusive lock
-                fcntl.lockf(lock_file.fileno(), fcntl.LOCK_EX)
-            
-            # Remove old service files to avoid stale configs
-            for file in target_dir.iterdir():
-                if file.is_file() and file.name != ".config_lock":
-                    file.unlink()
-            
-            services = config.get('services', [])
-            config_id = config.get('id', 'unknown')
-            
-            for service in services:
-                service_name = service.get('protocol', 'unnamed_service')
-                filename = f"service_{service_name}_{config_id}_{str(time.time())[12:]}.yaml"
-                target_path = target_dir / filename
-                with open(target_path, "w", encoding="utf8") as f:
-                    yaml.dump(service, f)
-                print(f"Service config written to {target_path}")
-                
-        finally:
-            # Lock is automatically released when the file is closed
-            pass
+
+    # Remove old service files to avoid stale configs
+    for file in target_dir.iterdir():
+        if file.is_file() and file.name != ".config_lock":
+            file.unlink()
+
+    services = config.get('services', [])
+    config_id = config.get('id', 'unknown')
+
+    for service in services:
+        service_name = service.get('protocol', 'unnamed_service')
+        filename = f"service_{service_name}_{config_id}_{str(time.time())[12:]}.yaml"
+        target_path = target_dir / filename
+        with open(target_path, "w", encoding="utf8") as f:
+            yaml.dump(service, f)
+        print(f"Service config written to {target_path}")
 
 # Pipeline Functions
 
