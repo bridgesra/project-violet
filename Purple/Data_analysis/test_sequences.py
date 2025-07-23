@@ -71,6 +71,7 @@ session_entropy_techniques_data = [measure_entropy_techniques(session) for sessi
 
 entropy_session_length_data = measure_entropy_session_length(combined_sessions)
 session_entropy_session_length_data = [measure_entropy_session_length(session) for session in sessions_list]
+sequence_data = measure_tactic_sequences(combined_sessions)
 
 # %%
 sequence_data = measure_tactic_sequences(combined_sessions)
@@ -128,6 +129,8 @@ dists_list = []
 margins = []
 mus = []
 import editdistance
+eps = 2
+eps = []
 
 for i in range(len(sequence_data["indexed_sequences"])):
     for j in range(0, i):
@@ -137,14 +140,14 @@ for i in range(len(sequence_data["indexed_sequences"])):
             dist = editdistance.eval(seq_i, seq_j)
             dists.update([dist])
             dists_list.append(dist)
+    eps.append(1.5e-2 * np.var(dists_list))
     moe = compute_confidence_interval(np.array(dists_list), 0.05)
     margins.append(moe)
     mus.append(np.mean(dists_list))
 mus = np.array(mus)
 margins = np.array(margins)
-
-window_size = 5
-eps = 2
+eps = np.array(eps)[-1]
+window_size = 10
 mask = (margins < eps) & (np.array([False] * window_size + [True] * (len(mus) - window_size)))
 values = np.array(range(len(mus)))
 

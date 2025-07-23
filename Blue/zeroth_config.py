@@ -4,9 +4,6 @@ from pathlib import Path
 import sys
 import json
 
-from dotenv import load_dotenv
-load_dotenv()
-
 # Add parent directory to sys.path to allow imports from project root
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Blue.utils import clean_and_finalize_config, extract_json

@@ -5,7 +5,6 @@ if platform.system() != 'Windows':
 from Blue_Lagoon.honeypot_tools import stop_dockers, start_dockers
 import config
 import os
-import time
 
 TIMEOUT = 60
 
@@ -22,18 +21,17 @@ prompt_patterns = [pexpect.EOF,
                     "Please type 'yes', 'no' or the fingerprint: "]
 
 def start_ssh():
-    try:
-        ssh = pexpect.spawn('ssh -o StrictHostKeyChecking=no -p30' +  os.getenv('RUNID') +' root@localhost', encoding='utf-8')
-        ssh.expect("root@localhost's password: ")
-        ssh.sendline('toor')
-        ssh.expect(r'└─\x1b\[1;31m#', timeout=60)
-        ssh.before.strip()
-        return ssh
-    except pexpect.exceptions.EOF:  # ONLY USE THIS WHEN RUNNING NO_RECONFIG
-        print("Got EOF error, restarting dockers")
-        stop_dockers()
-        start_dockers()
-        return start_ssh()
+    ssh = pexpect.spawn('ssh -o StrictHostKeyChecking=no -p30' +  os.getenv('RUNID') +' root@localhost', encoding='utf-8')
+    ssh.expect("root@localhost's password: ")
+    ssh.sendline('toor')
+    ssh.expect(r'└─\x1b\[1;31m#', timeout=60)
+    ssh.before.strip()
+    return ssh
+    # except pexpect.exceptions.EOF:  # ONLY USE THIS WHEN RUNNING NO_RECONFIG
+    #     print("Got EOF error, restarting dockers")
+    #     stop_dockers()
+    #     start_dockers()
+    #     return start_ssh()
 
 def send_terminal_command(connection, command):
     try:
