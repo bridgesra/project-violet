@@ -1,7 +1,4 @@
-# %%
 from Red.model import LLMHost
-import json
-from Red.attacker_prompts import AttackerPrompts
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques, retrieve_unique_tactics
 
 
@@ -9,37 +6,6 @@ model_host = LLMHost.OPENAI  # change when using Ollama
 
 # Can have prompt. C, I, A or general depending on intended purpose of attack.
 # C = Confidentiality, I = Integrity, A = Availability.
-
-def get_system_prompt(attacker_prompt: str) -> dict:
-    system_prompt = {
-        'role': 'system',
-        'content': attacker_prompt
-    }
-
-    if model_host == LLMHost.OPENAI:
-        system_prompt = system_prompt
-    elif model_host == LLMHost.OLLAMA:
-        system_prompt = system_prompt
-    elif model_host == LLMHost.OLLAMA_NO_FC:
-        system_prompt = get_system_prompt_workaround(attacker_prompt)
-    else:
-        raise ValueError(f"Unknown model host: {model_host}")
-    
-    return system_prompt
-
-def get_messages(i=0):
-    if i % 3 == 0:
-        system_prompt = get_system_prompt(AttackerPrompts.GENERAL)
-    elif i % 3 == 1:
-        system_prompt = get_system_prompt(AttackerPrompts.CONFIDENTIALITY)
-    elif i % 3 == 2:
-        system_prompt = get_system_prompt(AttackerPrompts.INTEGRITY)
-
-    messages = [
-        system_prompt,
-        {"role": "user", "content": "What is your next move?"}
-    ]
-    return messages
 
 
 technique_options = retrieve_unique_techniques()
@@ -105,84 +71,7 @@ terminate_tool = {
         }
     }
 
-web_search_tool = {
-        "type": "function",
-        "function": {
-            "name": "web_search_tool",
-            "description": "Searches the web and returns the full content of top relevant pages.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The search query to look up"
-                    },
-                    "num_results": {
-                        "type": "integer",
-                        "description": "How many pages to fetch and scrape",
-                        "default": 4
-                    },
-                    "max_chars": {
-                        "type": "integer",
-                        "description": "Maximum characters to return per page",
-                        "default": 2500
-                    }
-                },
-                "required": ["query"]
-            }
-        }
-    }
-
 tools = [
     terminal_input,
     terminate_tool
 ]
-
-
-
-# if model_host == LLMHost.OPENAI:
-#     tools = [
-#         {
-#             "type": "function",
-#             "function": tool
-#         } 
-#         for tool in flat_tools
-#     ]
-# elif model_host == LLMHost.OLLAMA:
-#     tools = tools
-# elif model_host == LLMHost.ANTHROPIC:
-#     from anthropic import Tool
-#     tools = [
-#         Tool(
-#             name=tool["name"],
-#             description=tool["description"],
-#             parameters=tool["parameters"]
-#         )
-#         for tool in tools
-#     ]
-
-def get_system_prompt_workaround(attacker_prompt):
-    system_prompt_ollama_workaround = {
-        "role": "system",
-        "content": (
-            f"{attacker_prompt}"
-            "## How to respond\n"
-            "1. You may output **either**:\n"
-            "   • normal assistant text (analysis, next steps, etc.), **or**\n"
-            "   • **exactly one** tool call in **JSON** form, with no extra text.\n"
-            "2. A tool call must be a single line that matches this schema *exactly*:\n"
-            "   `{ \"name\": \"<tool-name>\", \"arguments\": { … } }`\n"
-            "   – no markdown fences\n"
-            "   – no additional keys\n"
-            "3. After you call a tool, wait for the function result before continuing.\n\n"
-
-            "### Example tool call\n"
-            "{ \"name\": \"terminal_input\", \"arguments\": { \"command\": \"nmap -sS -p- 10.0.0.5\" } }\n\n"
-
-            "## Available tools\n"
-            f"{json.dumps(tools, indent=2)}\n"
-        )
-    }
-
-
-# %%

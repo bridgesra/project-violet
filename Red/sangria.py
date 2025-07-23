@@ -11,7 +11,6 @@ from Utils.jsun import append_json_to_file, save_json_to_file
 from Red.terminal_io import start_ssh
 
 tools = sangria_config.tools
-messages = sangria_config.get_messages()
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_client = openai.OpenAI()
@@ -85,8 +84,6 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
     total_prompt_tokens = 0
     total_completion_tokens = 0
     total_cached_tokens = 0
-
-    # using full logs and messages, full logs will also include the the honeypot logs
 
     ssh = None
     if not config.simulate_command_line:
@@ -186,9 +183,3 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
     }
 
     return messages_log_json, total_tokens_used
-
-if __name__ == "__main__":
-    test_single_attack = run_single_attack(messages, 2, "test_logs.json")
-
-
-# %%

@@ -1,13 +1,11 @@
 # %%
 from Red.model import LLMModel, ReconfigCriteria
-from Red.attacker_prompts import AttackerPrompts
 
 experiment_name = ""
 
 # Experiment settings
 llm_model_sangria = LLMModel.GPT_4_1_MINI
 llm_model_config = LLMModel.GPT_4_1_MINI
-attacker_prompt: str = AttackerPrompts.GENERAL
 reconfig_method: ReconfigCriteria = ReconfigCriteria.NO_RECONFIG
 llm_provider = "openai"
 
