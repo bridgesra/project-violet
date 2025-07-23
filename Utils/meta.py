@@ -13,6 +13,7 @@ def create_experiment_folder(experiment_name=None):
     folder_name = f"experiment_{timestamp}"
     if experiment_name:
         folder_name = f"{experiment_name}_{timestamp}"
+        folder_name = experiment_name
 
     # create the logs folder if it doesn't exist
     path = "logs/" + folder_name
