@@ -229,10 +229,6 @@ def build_config_prompt(schema_path, top_vulns, prev_config=None):
         description = vuln_data.get("description", "No description provided.")
         config_prompt += f"- {cve_id}: {description}\n"
 
-    if prev_config:
-        config_prompt += f"Here is the previously generated configuration file that you should improve upon and update to use the provided vulnerabilities.\n"
-        config_prompt += prev_config + "\n"
-
     return config_prompt
 
 def generate_config_with_llm(config_prompt):
