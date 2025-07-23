@@ -28,20 +28,22 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
         super().__init__(reset_every_reconfig)
 
     def reset(self):
-        self.values: List[float] = []
+        self.session_lengths: List[float] = []
         self.sessions: List[Dict[str, Any]]
         self.moes: List[float] = []
+        self.eps: List[float] = []
 
     def update(self, session):
         match self.variable:
             case "session_length":
-                self.values.append(int(session.get("length")))
+                self.session_lengths.append(int(session.get("length")))
                 self.moes.append(
                     compute_confidence_interval(
-                        np.array(self.values),
+                        np.array(self.session_lengths),
                         self.alpha
                     )
                 )
+                self.eps.append(self.tolerance * np.var(self.session_lengths))
             case "tactic_sequences":
                 tactic_sequence_data = measure_tactic_sequences([session])
                 dists_list = []
@@ -59,8 +61,9 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
                             self.alpha
                         )
                     )
+                    self.eps.append(self.tolerance * np.mean(dists_list))
         
     def should_reconfigure(self):
         if not self.moes:
             return False
-        return self.moes[-1] < self.tolerance
+        return self.moes[-1] < self.eps[-1]

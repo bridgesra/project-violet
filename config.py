@@ -33,8 +33,10 @@ en_variable: str = "techniques"
 en_window_size: int = 1
 en_tolerance: float = 1e-2
 ## T-test reconfiguration
-tt_variable: str = "session_length"
-tt_tolerance: float = 1
+tt_variable: str = "tactic_sequences"
+# tolerance session_length: 0.008
+# tolerance levensthein: 0.003
+tt_tolerance: float = 0.003
 tt_confidence: float = 0.95
 
 # Other

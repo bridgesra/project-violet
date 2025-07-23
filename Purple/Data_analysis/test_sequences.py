@@ -140,7 +140,7 @@ for i in range(len(sequence_data["indexed_sequences"])):
             dist = editdistance.eval(seq_i, seq_j)
             dists.update([dist])
             dists_list.append(dist)
-    eps.append(1.5e-2 * np.var(dists_list))
+    eps.append(0.003 * np.var(dists_list))
     moe = compute_confidence_interval(np.array(dists_list), 0.05)
     margins.append(moe)
     mus.append(np.mean(dists_list))
@@ -152,7 +152,7 @@ mask = (margins < eps) & (np.array([False] * window_size + [True] * (len(mus) - 
 values = np.array(range(len(mus)))
 
 plt.errorbar(values, mus, margins)
-plt.scatter(values[mask], mus[mask], color="orange")
+plt.scatter(values[mask], mus[mask], color="red")
 plt.xlabel("Sequence")
 plt.ylabel("Mean")
 plt.show()
@@ -165,6 +165,8 @@ pprint.pprint(sequence_data)
 session_all_lengths = [measure_session_length(session)["session_lengths"] for session in sessions_list]
 margins = []
 mus = []
+eps = 10
+eps = []
 
 for session_lengths in session_all_lengths:
     print(session_lengths)
@@ -172,20 +174,23 @@ for session_lengths in session_all_lengths:
         moe = compute_confidence_interval(session_lengths[0:i], 0.05)
         margins.append(moe)
         mus.append(np.mean(session_lengths[0:i]))
+        eps.append(0.008 * np.var(session_lengths[0:i]))
+
 mus = np.array(mus)
 margins = np.array(margins)
+eps = np.array(eps)
 
 window_size = 5
-eps = 10
 mask = (margins <= eps)
 values = np.array(range(len(mus)))
 
 plt.ylim(-5, 100)
 plt.errorbar(values, mus, margins)
-plt.scatter(values[mask], mus[mask], color="orange")
+plt.scatter(values[mask], mus[mask], color="red")
 plt.xlabel("Sequence")
 plt.ylabel("Mean")
-# plt.plot(values, length_data["session_lengths"], color="orange", markersize=1)
+plt.scatter(values, length_data["session_lengths"], color="orange", s=1)
 plt.show()
+print(mus[mask])
 
 # %%
