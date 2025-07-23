@@ -6,7 +6,7 @@ import os
 import config
 from pathlib import Path
 
-from Red import sangria_config
+from Red import attacker_prompts
 from Red.sangria import run_single_attack
 from Red.extraction import extract_session
 
@@ -56,7 +56,11 @@ def main():
 
         logs_path = full_logs_path / f"attack_{i+1}.json"
 
-        messages = sangria_config.get_messages(i)
+        messages = [
+            {'role': 'system', 'content': attacker_prompts.attacker_prompt},
+            {"role": "user", "content": "What is your next move?"}
+        ]
+
         logs, tokens_used = run_single_attack(messages, config.max_session_length, logs_path, i, config_counter)
 
 
