@@ -14,6 +14,7 @@ import json
 import pprint
 import matplotlib.pyplot as plt
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques
+from Purple.Data_analysis.utils import extract_experiment
 
 logs_path = Path(__file__).resolve().parent.parent.parent / "logs"
 experiment_names = os.listdir(logs_path)[::-1]
@@ -39,27 +40,6 @@ from Purple.Data_analysis.metrics import measure_session_length, measure_mitre_d
 
 
 path = logs_path / selected_experiment
-
-def extract_experiment(path, filter_empty_sessions, use_omni_sessions=False):
-    configs = [name for name in os.listdir(path) if str(name).startswith("hp_config")]
-    configs = sorted(
-        configs,
-        key=lambda fn: int(Path(fn).stem.split('_')[-1])
-    )
-
-    session_file_name = "omni_sessions.json" if use_omni_sessions else "sessions.json"
-    sessions_list = [load_json(path / config / session_file_name) for config in configs if session_file_name in os.listdir(path / config)]
-
-    if filter_empty_sessions:
-        new_sessions_list = []
-        for config_sessions in sessions_list:
-            new_sessions_list.append([session for session in config_sessions if session["session"]])
-        sessions_list = new_sessions_list
-
-    reconfig_indices = np.cumsum([len(session) for session in sessions_list][:-1])
-    combined_sessions = sum(sessions_list, [])
-
-    return combined_sessions, sessions_list, reconfig_indices
 
 combined_sessions, sessions_list, reconfig_indices = extract_experiment(path, filter_empty_sessions, use_omni_sessions)
 

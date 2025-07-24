@@ -17,7 +17,7 @@ import json
 import pprint
 import matplotlib.pyplot as plt
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques
-from analysis import extract_experiment
+from Purple.Data_analysis.utils import extract_experiment
 
 logs_path = Path(__file__).resolve().parent.parent.parent / "logs"
 experiment_names = os.listdir(logs_path)[::-1]
@@ -169,12 +169,35 @@ print(tactic_distribution_df)
 tactic_distribution_df.to_csv(logs_path / "tactic_distribution.csv")
 
 # %% Honeypot deceptiveness
+# table of model of HP/experiment, detection, no detection, session length befor discovery and average session length
+
 
 # %% Average session length over time (restart each configuration)
 
 # %% Average Levenshtein distance over time (restart each configuration)
 
 # %% Set of sequences over time
+unique_session_list = []
+unique_session_list_list = []
+for i, comb_session in enumerate(combined_sessions_list):
+    unique_session = set()
+    _usll = []
+    for session in comb_session:
+        unique_session.add(session['tactics'])
+        _usll.append(len(unique_session))
+    unique_session_list.append(unique_session)
+    unique_session_list_list.append(_usll)
+print(unique_session_list)
+print([len(sessions) for sessions in combined_sessions_list if sessions])
+print([len(sessions) for sessions in unique_session_list])
+
+for a in unique_session_list_list:
+    print((a))
+
+plt.figure(figsize=(12, 6))
+for usl in unique_session_list_list:
+    plt.plot(usl, marker='o', linestyle='-', alpha=0.5)
+
 
 # %% Average Levenshtein distance over time (no restart)
 
