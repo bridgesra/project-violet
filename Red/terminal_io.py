@@ -6,7 +6,7 @@ from Blue_Lagoon.honeypot_tools import stop_dockers, start_dockers
 import config
 import os
 
-TIMEOUT = 60
+TIMEOUT = 40
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_client = openai.OpenAI()
@@ -18,7 +18,9 @@ prompt_patterns = [pexpect.EOF,
                     's password: ',
                     'Enter password: ',
                     r'\:\~\$ ',
-                    "Please type 'yes', 'no' or the fingerprint: "]
+                    "Please type 'yes', 'no' or the fingerprint: ",
+                    "Do you want to install it? (N/y)",
+                    "Overwrite (y/n)?",]
 
 def start_ssh():
     ssh = pexpect.spawn('ssh -o StrictHostKeyChecking=no -p30' +  os.getenv('RUNID') +' root@localhost', encoding='utf-8')
