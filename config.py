@@ -1,7 +1,7 @@
 # %%
 from Red.model import LLMModel, ReconfigCriteria
 
-experiment_name = "BEAN"
+experiment_name = ""
 
 # Experiment settings
 llm_model_sangria = LLMModel.GPT_4_1_MINI
