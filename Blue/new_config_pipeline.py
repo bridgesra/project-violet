@@ -80,7 +80,7 @@ def set_honeypot_config(config):
 
 # Pipeline Functions
 
-def sample_previous_configs(config_dir, sample_size=5):
+def sample_previous_configs(config_dir, sample_size=3):
     """
     Randomly sample up to sample_size previous honeypot config files from the given directory.
     Extract relevant information for each sampled config for use in LLM prompting.
