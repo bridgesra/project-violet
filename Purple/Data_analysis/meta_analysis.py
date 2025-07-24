@@ -69,9 +69,13 @@ for path in paths:
 print(json.dumps(sessions_list_list, indent=2))
 
 # %% Tactic distribution
-full_tactic_distributions = {}
-tactic_distributions = []
-session_lengths = []
+from Purple.Data_analysis.metrics import measure_tactic_sequences, measure_technique_sequences, measure_command_sequences
+for i, combined_sessions in enumerate(combined_sessions_list):
+    sequence_data = measure_tactic_sequences(combined_sessions)
+
+    full_tactic_distributions = {}
+    tactic_distributions = []
+    session_lengths = []
 
 for i, sessions in enumerate(combined_sessions_list):
     mitre_dist_data = measure_mitre_distribution(sessions)
@@ -173,6 +177,41 @@ tactic_distribution_df.to_csv(logs_path / "tactic_distribution.csv")
 
 
 # %% Average session length over time (restart each configuration)
+for k, sessions_list in enumerate(sessions_list_list):
+    length_data = measure_session_length(combined_sessions_list[k])
+    print(length_data)
+    
+    session_all_lengths = [measure_session_length(session)["session_lengths"] for session in sessions_list]
+
+    for j, session_lengths in enumerate(session_all_lengths):
+        margins = []
+        mus = []
+        eps = 10
+        eps = []
+
+        for i in range(len(session_lengths)):
+            moe = compute_confidence_interval(session_lengths[0:i], 0.05)
+            margins.append(moe)
+            mus.append(np.mean(session_lengths[0:i]))
+            eps.append(0.4 * np.std(session_lengths[0:i], ddof=1))
+
+        mus = np.array(mus)
+        margins = np.array(margins)
+        eps = np.array(eps)
+
+        window_size = 5
+        mask = (margins <= eps)
+        values = np.array(range(len(mus)))
+
+        plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}, Config {j+1}", alpha=0.7)
+        plt.scatter(values[mask], mus[mask], color=colors.scheme[k], alpha=0.7)
+
+plt.ylim(-5, 100)
+plt.legend()
+plt.xlabel("Sequence")
+plt.ylabel("Mean")
+plt.show()
+
 
 # %% Average Levenshtein distance over time (restart each configuration)
 
@@ -191,15 +230,56 @@ print(unique_session_list)
 print([len(sessions) for sessions in combined_sessions_list if sessions])
 print([len(sessions) for sessions in unique_session_list])
 
-for a in unique_session_list_list:
-    print((a))
 
 plt.figure(figsize=(12, 6))
 for usl in unique_session_list_list:
-    plt.plot(usl, marker='o', linestyle='-', alpha=0.5)
+    plt.plot(usl, marker='o', linestyle='-')
+    plt.legend([f"Experiment {i+1}" for i in range(len(unique_session_list_list))])
+plt.xlabel("Session Index")
+plt.ylabel("Number of Unique Sessions")
+plt.title("Number of Unique Sessions Over Time")
+plt.show()
 
 
 # %% Average Levenshtein distance over time (no restart)
+from collections import Counter
+from utils import compute_confidence_interval
+
+for i, combined_sessions in enumerate(combined_sessions_list):
+    sequence_data = measure_tactic_sequences(combined_sessions)
+
+    dists = Counter()
+    dists_list = []
+    margins = []
+    mus = []
+    import editdistance
+    eps = 2
+    eps = []
+
+    for i in range(len(sequence_data["indexed_sequences"])):
+        for j in range(0, i):
+            seq_i = sequence_data["indexed_sequences"][i]
+            seq_j = sequence_data["indexed_sequences"][j]
+            if seq_i and seq_j:
+                dist = editdistance.eval(seq_i, seq_j)
+                dists.update([dist])
+                dists_list.append(dist)
+        eps.append(0.1 * np.std(dists_list, ddof=1))
+        moe = compute_confidence_interval(np.array(dists_list), 0.05)
+        margins.append(moe)
+        mus.append(np.mean(dists_list))
+    mus = np.array(mus)
+    margins = np.array(margins)
+    eps = np.array(eps)[-1]
+    window_size = 10
+    mask = (margins < eps) & (np.array([False] * window_size + [True] * (len(mus) - window_size)))
+    values = np.array(range(len(mus)))
+
+    plt.plot(values, mus)
+    
+plt.xlabel("Sequence")
+plt.ylabel("Mean Levenshtein Distance")
+plt.show()
 
 # %% Tokens used per experiment
 

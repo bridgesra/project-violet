@@ -126,7 +126,7 @@ plt.legend(fontsize="small")
 plt.show()
 
 # %% Tokens vs session
-
+configs = [name for name in os.listdir(path) if str(name).startswith("hp_config")]
 tokens_list = [load_json(path / config / "tokens_used.json") for config in configs]
 token_reconfig_indices= np.cumsum([len(tokens) for tokens in tokens_list][:-1])
 combined_tokens = sum(tokens_list, [])
@@ -188,3 +188,5 @@ eps = 5e-3
 window_size = 2
 smoothed = moving_average(entropy_techniques_data["entropies"], window_size)
 diffs = np.abs(np.diff(smoothed, prepend=np.ones((window_size,)) * np.inf))
+
+# %%

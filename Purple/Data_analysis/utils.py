@@ -25,4 +25,14 @@ def extract_experiment(path, filter_empty_sessions, use_omni_sessions=False):
 
     return combined_sessions, sessions_list, reconfig_indices
 
+from scipy.stats import t
+def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:
+    s = session_lengths.std(ddof=1)
+    n = session_lengths.shape[0]
+
+    t_crit = t.ppf(1 - alpha/2, df=n - 1)
+    moe = t_crit * (s / np.sqrt(n))
+
+    return float(moe)
+
 # %%

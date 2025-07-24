@@ -28,7 +28,7 @@ display(dropdown)
 #%%
 
 selected_experiment = dropdown.value
-filter_empty_sessions = False
+filter_empty_sessions = True
 use_omni_sessions = False
 print(f"Analyzing experiment {selected_experiment}")
 
@@ -140,7 +140,7 @@ for i in range(len(sequence_data["indexed_sequences"])):
             dist = editdistance.eval(seq_i, seq_j)
             dists.update([dist])
             dists_list.append(dist)
-    eps.append(0.003 * np.var(dists_list))
+    eps.append(0.2 * np.std(dists_list, ddof=1))
     moe = compute_confidence_interval(np.array(dists_list), 0.05)
     margins.append(moe)
     mus.append(np.mean(dists_list))
@@ -163,9 +163,6 @@ pprint.pprint(sequence_data)
 # %%
 
 session_all_lengths = [measure_session_length(session)["session_lengths"] for session in sessions_list]
-n = len(combined_sessions) // 2
-fake_sessions_list = [combined_sessions[i:i + n] for i in range(0, len(combined_sessions), n)]
-session_all_lengths = [measure_session_length(session)["session_lengths"] for session in fake_sessions_list]
 margins = []
 mus = []
 eps = 10
@@ -177,14 +174,13 @@ for session_lengths in session_all_lengths:
         moe = compute_confidence_interval(session_lengths[0:i], 0.05)
         margins.append(moe)
         mus.append(np.mean(session_lengths[0:i]))
-        eps.append(0.003 * np.var(session_lengths[0:i]))
+        eps.append(0.4 * np.std(session_lengths[0:i], ddof=1))
 
 mus = np.array(mus)
 margins = np.array(margins)
 eps = np.array(eps)
 
 window_size = 5
-eps = 10
 mask = (margins <= eps)
 values = np.array(range(len(mus)))
 
