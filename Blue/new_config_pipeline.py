@@ -80,7 +80,7 @@ def set_honeypot_config(config):
 
 # Pipeline Functions
 
-def sample_previous_configs(config_dir, sample_size=3):
+def sample_previous_configs(config_dir, sample_size=5):
     """
     Randomly sample up to sample_size previous honeypot config files from the given directory.
     Extract relevant information for each sampled config for use in LLM prompting.
@@ -120,7 +120,7 @@ def sample_previous_configs(config_dir, sample_size=3):
             
             sampled_configs_with_sessions.append({
                 "config": config_data,
-                "sessions": session_data,
+                # "sessions": session_data,
                 "config_path": str(config_file),
                 "sessions_path": str(sessions_file) if sessions_file.exists() else None
             })
@@ -149,25 +149,12 @@ def build_llm_prompt(sampled_configs):
     """
     for i, entry in enumerate(sampled_configs, 1):
             config = entry["config"]
-            sessions = entry["sessions"]
             
             llm_prompt += f"=== Previous Configuration {i} ===\n"
             llm_prompt += "HONEYPOT CONFIG:\n"
             llm_prompt += json.dumps(config, indent=2)
             llm_prompt += "\n\n"
             
-            if sessions:
-                llm_prompt += "ATTACK SESSIONS THIS CONFIG ATTRACTED:\n"
-                if isinstance(sessions, list):
-                    for j, session in enumerate(sessions):
-                        llm_prompt += f"Session {j+1}:\n"
-                        llm_prompt += json.dumps(session, indent=2)
-                        llm_prompt += "\n"
-                else:
-                    llm_prompt += json.dumps(sessions, indent=2)
-                llm_prompt += "\n"
-            else:
-                llm_prompt += "ATTACK SESSIONS: No session data available for this config.\n\n"
             
             llm_prompt += "=" * 50 + "\n\n"
 
