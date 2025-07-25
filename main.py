@@ -52,16 +52,16 @@ def main():
     for i in range(config.num_of_attacks):
         config_attack_counter += 1
         os.makedirs(config_path, exist_ok=True)
-        print(f"{BOLD}Attack {i+1} / {config.num_of_attacks}, configuration {config_counter}{RESET}")
+        print(f"{BOLD}Attack {config_attack_counter} / {config.num_of_attacks}, configuration {config_counter}{RESET}")
 
-        logs_path = full_logs_path / f"attack_{i+1}.json"
+        logs_path = full_logs_path / f"attack_{config_attack_counter}.json"
 
         messages = [
             {'role': 'system', 'content': attacker_prompts.attacker_prompt},
             {"role": "user", "content": "What is your next move?"}
         ]
 
-        logs, tokens_used = run_single_attack(messages, config.max_session_length, logs_path, i, config_counter)
+        logs, tokens_used = run_single_attack(messages, config.max_session_length, logs_path, config_attack_counter-1, config_counter)
 
 
         # extract session and add attack pattern to set
