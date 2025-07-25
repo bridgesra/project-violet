@@ -72,7 +72,7 @@ def main():
         tokens_used_list.append(tokens_used)
         append_json_to_file(session, config_path / f"sessions.json", False)
 
-        if reconfigurator.should_reconfigure() and config_attack_counter >= config.min_num_of_attacks_reconfig:    
+        if config_attack_counter >= 100:    
             print(f"{BOLD}Reconfiguring: Using {config.reconfig_method}.{RESET}")
 
             if not config.simulate_command_line:
