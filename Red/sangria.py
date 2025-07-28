@@ -3,10 +3,9 @@ import openai
 import os
 import json
 import time
-import Red.sangria_config as sangria_config
 import config
 import Red.log_extractor as log_extractor
-import Red.tools as red_tools
+from Red.llm_tools import handle_tool_call, tools
 from Utils.jsun import append_json_to_file, save_json_to_file
 from Red.terminal_io import start_ssh
 
@@ -63,7 +62,7 @@ def openai_call(model, messages, tool_choice, wait_time=1):
         return openai_client.chat.completions.create(
             model=model,
             messages=messages,
-            tools=sangria_config.tools,
+            tools=tools,
             tool_choice=tool_choice
         )
 
@@ -119,7 +118,6 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
             print("LLM refused to help, ending session.")
             break
 
-
         for tool_use in tool_calls:
             fn_name = tool_use.function.name
             fn_args = json.loads(tool_use.function.arguments)
@@ -131,7 +129,7 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
                     last_terminal_input_tool = terminal_input_tools[-1]
                     last_terminal_input_tool["honeypot_logs"] = beelzebub_logs
                 
-            result, mitre_method_used = red_tools.handle_tool_call(fn_name, fn_args, ssh)
+            result= handle_tool_call(fn_name, fn_args, ssh)
 
             tool_response = {
                 "role": "tool",
@@ -166,7 +164,6 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
         if fn_name == "terminate":
             print("Termination tool called, ending session.")
             break
-
         
     messages_log_json = create_json_log(messages)
     save_json_to_file(messages_log_json, full_logs_path)
