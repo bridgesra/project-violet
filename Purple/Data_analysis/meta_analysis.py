@@ -97,8 +97,6 @@ print(full_tactic_distributions)
 print(tactic_distributions)
 print(session_lengths)
 
-
-
 # %% Plot tactic distribution
 plt.figure(figsize=(10, 6))
 plt.bar(full_tactic_distributions.keys(), full_tactic_distributions.values(), color=colors.blue)
@@ -115,11 +113,6 @@ plt.figure(figsize=(12, 6))
 # Get all unique tactics across all experiments and sort by total count (descending)
 all_tactics = sorted(full_tactic_distributions.keys(), key=lambda x: full_tactic_distributions[x], reverse=True)
 
-# Create a color map for different experiments
-colors_list = ['blue', 'red', 'green', 'orange', 'purple', 'gold']
-if len(tactic_distributions) > len(colors_list):
-    colors_list = plt.cm.tab10(np.linspace(0, 1, len(tactic_distributions)))
-
 # Set up bar positions
 x_positions = np.arange(len(all_tactics))
 
@@ -134,7 +127,7 @@ for i, tactic_distribution in enumerate(tactic_distributions):
     plt.bar(x_positions, counts, 
             bottom=bottom,
             label=f'Experiment {selected_experiments[i]}',
-            color=colors_list[i % len(colors_list)])
+            color=colors.scheme[i % len(colors.scheme)],)
     
     # Update bottom for next stack
     bottom += counts
@@ -214,6 +207,50 @@ plt.show()
 
 
 # %% Average Levenshtein distance over time (restart each configuration)
+for k, sessions_list in enumerate(sessions_list_list):
+    combined_sessions = combined_sessions_list[k]
+    
+    for j, sessions in enumerate(sessions_list):
+        sequence_data = measure_tactic_sequences(sessions)
+        
+        margins = []
+        mus = []
+        eps = []
+        dists_list = []
+
+        for i in range(1, len(sequence_data["indexed_sequences"])):
+            # Calculate Levenshtein distances for all pairs up to index i
+            current_dists = []
+            for l in range(0, i):
+                seq_i = sequence_data["indexed_sequences"][i]
+                seq_l = sequence_data["indexed_sequences"][l]
+                if seq_i and seq_l:
+                    dist = editdistance.eval(seq_i, seq_l)
+                    current_dists.append(dist)
+                    dists_list.append(dist)
+            
+            if dists_list:
+                eps.append(0.1 * np.std(dists_list, ddof=1) if len(dists_list) > 1 else 0)
+                moe = compute_confidence_interval(np.array(dists_list), 0.05)
+                margins.append(moe)
+                mus.append(np.mean(dists_list))
+
+        if mus:
+            mus = np.array(mus)
+            margins = np.array(margins)
+            eps_threshold = eps[-1] if eps else 0
+            window_size = 5
+            mask = (margins <= eps_threshold) if len(margins) > window_size else np.ones(len(margins), dtype=bool)
+            values = np.array(range(len(mus)))
+
+            plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}, Config {j+1}", alpha=0.7)
+            plt.scatter(values[mask], mus[mask], color=colors.scheme[k], alpha=0.7)
+
+plt.legend()
+plt.xlabel("Sequence")
+plt.ylabel("Mean Levenshtein Distance")
+plt.title("Average Levenshtein Distance Over Time (Restart Each Configuration)")
+plt.show()
 
 # %% Set of sequences over time
 unique_session_list = []
@@ -244,15 +281,16 @@ plt.show()
 # %% Average Levenshtein distance over time (no restart)
 from collections import Counter
 from utils import compute_confidence_interval
+import editdistance
+from Utils.jsun import load_json
 
-for i, combined_sessions in enumerate(combined_sessions_list):
+for k, combined_sessions in enumerate(combined_sessions_list):
     sequence_data = measure_tactic_sequences(combined_sessions)
 
     dists = Counter()
     dists_list = []
     margins = []
     mus = []
-    import editdistance
     eps = 2
     eps = []
 
@@ -275,10 +313,11 @@ for i, combined_sessions in enumerate(combined_sessions_list):
     mask = (margins < eps) & (np.array([False] * window_size + [True] * (len(mus) - window_size)))
     values = np.array(range(len(mus)))
 
-    plt.plot(values, mus)
+    plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}", alpha=0.7)
     
 plt.xlabel("Sequence")
 plt.ylabel("Mean Levenshtein Distance")
+plt.legend()
 plt.show()
 
 # %% Tokens used per experiment
