@@ -17,7 +17,8 @@ import json
 import pprint
 import matplotlib.pyplot as plt
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques
-from Purple.Data_analysis.utils import extract_experiment
+from Purple.Data_analysis.utils import extract_experiment, compute_confidence_interval
+import editdistance
 
 logs_path = Path(__file__).resolve().parent.parent.parent / "logs"
 experiment_names = os.listdir(logs_path)[::-1]
@@ -46,7 +47,7 @@ import numpy as np
 from Purple.Data_analysis.metrics import measure_session_length, measure_mitre_distribution, \
     measure_entropy_session_length, measure_entropy_techniques, measure_entropy_tactics
 
-filter_empty_sessions = False
+filter_empty_sessions = True
 # %%
 
 selected_experiments = list(experiment_selector.value)
@@ -167,14 +168,62 @@ tactic_distribution_df.to_csv(logs_path / "tactic_distribution.csv")
 
 # %% Honeypot deceptiveness
 # table of model of HP/experiment, detection, no detection, session length befor discovery and average session length
+hp_deceptiveness_data = []
+for i, sessions_list in enumerate(combined_sessions_list):
+    honeypot_model = selected_experiments[i]
+    n_experiments = len(sessions_list)
 
+    honeypot_detected = sum(1 for session in sessions_list if session.get("discovered_honeypot") == "yes")
+    honeypot_not_detected = n_experiments - honeypot_detected
+
+    detected_percentage = honeypot_detected / n_experiments * 100
+    not_detected_percentage = honeypot_not_detected / n_experiments * 100
+
+    session_length_data = measure_session_length(sessions_list)
+    average_session_length = session_length_data["mean"]
+
+    sessions_before_discovery = [session for session in sessions_list if session.get("discovered_honeypot") == "yes"]
+    if sessions_before_discovery:
+        session_length_before_discovery = measure_session_length(sessions_before_discovery)
+        average_session_length_before_discovery = session_length_before_discovery["mean"]
+    else:
+        average_session_length_before_discovery = 0
+
+    sessions_without_discovery = [session for session in sessions_list if session.get("discovered_honeypot") == "no"]
+    if sessions_without_discovery:
+        session_length_without_discovery = measure_session_length(sessions_without_discovery)
+        average_session_length_without_discovery = session_length_without_discovery["mean"]
+    else:
+        average_session_length_without_discovery = 0
+
+    hp_deceptiveness_data.append({
+        "Honeypot Model": honeypot_model,
+        "Experiment": selected_experiments[i],
+        "Detection Percentage": detected_percentage,
+        "No Detection Percentage": not_detected_percentage,
+        "Average Session Length": average_session_length,
+        "Average Session Length Before Discovery": average_session_length_before_discovery,
+        "Average Session Length Without Discovery": average_session_length_without_discovery
+    })
+
+hp_deceptiveness_df = pd.DataFrame(hp_deceptiveness_data)
+
+hp_deceptiveness_df = hp_deceptiveness_df.round(2)
+print(hp_deceptiveness_df)        
 
 # %% Average session length over time (restart each configuration)
 for k, sessions_list in enumerate(sessions_list_list):
     length_data = measure_session_length(combined_sessions_list[k])
     print(length_data)
-    
-    session_all_lengths = [measure_session_length(session)["session_lengths"] for session in sessions_list]
+
+    session_all_lengths = []    
+    for session in sessions_list:
+        print(len(session))
+        if len(session) == 0:
+            continue
+        session_length_data = measure_session_length(session)
+        session_all_lengths.append(session_length_data["session_lengths"])
+
 
     for j, session_lengths in enumerate(session_all_lengths):
         margins = []
@@ -230,7 +279,7 @@ for k, sessions_list in enumerate(sessions_list_list):
                     dists_list.append(dist)
             
             if dists_list:
-                eps.append(0.1 * np.std(dists_list, ddof=1) if len(dists_list) > 1 else 0)
+                eps.append(0.05 * np.std(dists_list, ddof=1) if len(dists_list) > 1 else 0)
                 moe = compute_confidence_interval(np.array(dists_list), 0.05)
                 margins.append(moe)
                 mus.append(np.mean(dists_list))
@@ -244,7 +293,7 @@ for k, sessions_list in enumerate(sessions_list_list):
             values = np.array(range(len(mus)))
 
             plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}, Config {j+1}", alpha=0.7)
-            plt.scatter(values[mask], mus[mask], color=colors.scheme[k], alpha=0.7)
+            plt.plot(values[mask], mus[mask], color=colors.scheme[-1], alpha=0.7)
 
 plt.legend()
 plt.xlabel("Sequence")
@@ -315,8 +364,14 @@ for k, combined_sessions in enumerate(combined_sessions_list):
 
     plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}", alpha=0.7)
     
+    # Add vertical bars for reconfig indices
+    for reconfig_idx in reconfig_indices_list[k]:
+        plt.axvline(x=reconfig_idx, color=colors.scheme[k], linestyle='--', alpha=0.5)
+    
 plt.xlabel("Sequence")
 plt.ylabel("Mean Levenshtein Distance")
+plt.xlim([50, len(mus) - 1])
+plt.ylim([20, 40])
 plt.legend()
 plt.show()
 
