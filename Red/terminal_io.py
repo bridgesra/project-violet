@@ -80,6 +80,9 @@ def terminal_input(command: str, ssh):
     
     # Run command on Kali over SSH
     if not config.simulate_command_line:
+        if "kill ssh" in command:
+            return f"Cannot run command '{command}' as it would result in a loss of connection to the Kali machine."
+
         command_response = send_terminal_command(ssh, command)
         if len(command_response) > 10000:
             command_response = command_response[-10000:] + "\n***TOO LONG OUTPUT FROM COMMAND, ONLY SHOWING THE FINAL 10000 characters***"
