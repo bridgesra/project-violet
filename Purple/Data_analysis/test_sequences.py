@@ -121,6 +121,8 @@ plt.show()
 mean_dist = np.mean(distances)
 moe = compute_confidence_interval(distances, 0.05)
 
+# %%
+print(sequence_data)
 
 # %%
 from collections import Counter
@@ -131,7 +133,7 @@ mus = []
 import editdistance
 eps = 2
 eps = []
-
+print(sequence_data["indexed_sequences"])
 for i in range(len(sequence_data["indexed_sequences"])):
     for j in range(0, i):
         seq_i = sequence_data["indexed_sequences"][i]

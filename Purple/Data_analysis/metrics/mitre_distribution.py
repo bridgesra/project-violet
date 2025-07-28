@@ -1,5 +1,6 @@
 from typing import Dict, List, Any
 import numpy as np
+from Purple.Data_analysis.utils import Sessions
 
 def create_heatmap(rows: List[str], data: List[Dict[str, int]]) -> np.ndarray:
     rows_to_num = { row:i for i, row in enumerate(rows)}
@@ -11,7 +12,7 @@ def create_heatmap(rows: List[str], data: List[Dict[str, int]]) -> np.ndarray:
 
     return heatmap
 
-def measure_mitre_distribution(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+def measure_mitre_distribution(sessions: Sessions) -> Dict[str, Any]:
     all_tactics = {}
     all_techniques = {}
     session_tactics = []

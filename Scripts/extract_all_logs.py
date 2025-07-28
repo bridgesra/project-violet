@@ -26,7 +26,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     extract_only_inside_honeypot = questionary.confirm(
-        "Do you only want to extract attacks inside the honeypot?"
+        "Do you only want to extract attacks inside the honeypot?",
+        default=False
     ).ask()
     extract_everything = not extract_only_inside_honeypot
 

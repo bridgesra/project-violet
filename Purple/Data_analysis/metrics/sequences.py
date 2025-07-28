@@ -1,18 +1,19 @@
 import editdistance
 import numpy as np
-from typing import Dict, List, Any, Literal, Set
+from typing import Dict, List, Any, Literal
+from Purple.Data_analysis.utils import Sessions
 
-def measure_tactic_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
-    return measure_sequences(sessions, "tactics")
+def measure_tactic_sequences(sessions: Sessions) -> Dict[str, Any]:
+    return measure_sequences(sessions, "tactic")
 
-def measure_technique_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
-    return measure_sequences(sessions, "techniques")
+def measure_technique_sequences(sessions: Sessions) -> Dict[str, Any]:
+    return measure_sequences(sessions, "technique")
 
-def measure_command_sequences(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+def measure_command_sequences(sessions: Sessions) -> Dict[str, Any]:
     return measure_sequences(sessions, "command")
 
-def measure_sequences(sessions: List[Dict[str, Any]],
-        t_name: Literal["tactics", "techniques", "command"]) -> Dict[str, Any]:
+def measure_sequences(sessions: Sessions,
+        t_name: Literal["tactic", "technique", "command"]) -> Dict[str, Any]:
     t_to_index: Dict[str, int] = {}
     sequences: List[List[str]] = []
     indexed_sequences: List[List[int]] = []

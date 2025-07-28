@@ -1,12 +1,13 @@
 import numpy as np
 from typing import Dict, List, Any, Literal
 from Purple.Data_analysis.metrics import measure_mitre_distribution
+from Purple.Data_analysis.utils import Sessions
 
 def compute_entropy(probs: np.ndarray) -> float:
     log_probs = np.nan_to_num(np.log(probs), neginf=0)
     return (-probs * log_probs).sum()
 
-def measure_entropy_mitre(sessions: List[Dict[str, Any]],
+def measure_entropy_mitre(sessions: Sessions,
         variable: Literal["tactics", "techniques"]) -> Dict[str, Any]:
     mitre_data = measure_mitre_distribution(sessions)
     mitre_dict: Dict[str, int] = mitre_data[variable]
@@ -37,13 +38,13 @@ def measure_entropy_mitre(sessions: List[Dict[str, Any]],
     }
     return results
 
-def measure_entropy_tactics(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+def measure_entropy_tactics(sessions: Sessions) -> Dict[str, Any]:
     return measure_entropy_mitre(sessions, "tactics")
 
-def measure_entropy_techniques(sessions: List[Dict[str, Any]]) -> Dict[str, Any]:
+def measure_entropy_techniques(sessions: Sessions) -> Dict[str, Any]:
     return measure_entropy_mitre(sessions, "techniques")
 
-def measure_entropy_session_length(sessions: List[Dict]) -> Dict[str, Any]:
+def measure_entropy_session_length(sessions: Sessions) -> Dict[str, Any]:
     session_lengths = [session.get("length", 0) for session in sessions]
     session_lengths = np.array(session_lengths)
     unique_lengths, counts = np.unique(session_lengths, return_counts=True)

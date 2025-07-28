@@ -1,10 +1,23 @@
-# %%
 import os
 from pathlib import Path
 import numpy as np
+from typing import List, Dict, Any, Tuple
 from Utils.jsun import load_json
+from scipy.stats import t
 
-def extract_experiment(path, filter_empty_sessions, use_omni_sessions=False):
+Session = Dict[str, Any]
+Sessions = List[Session]
+ConfigSessions = List[Sessions]
+ReconfigIndices = List[int]
+Experiment = Tuple[
+    Sessions,
+    ConfigSessions,
+    ReconfigIndices,
+]
+Experiments = List[Experiment]
+
+
+def extract_experiment(path: Path, filter_empty_sessions: bool, use_omni_sessions=False) -> Experiment:
     configs = [name for name in os.listdir(path) if str(name).startswith("hp_config")]
     configs = sorted(
         configs,
@@ -25,7 +38,6 @@ def extract_experiment(path, filter_empty_sessions, use_omni_sessions=False):
 
     return combined_sessions, sessions_list, reconfig_indices
 
-from scipy.stats import t
 def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:
     s = session_lengths.std(ddof=1)
     n = session_lengths.shape[0]
@@ -34,5 +46,3 @@ def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> fl
     moe = t_crit * (s / np.sqrt(n))
 
     return float(moe)
-
-# %%

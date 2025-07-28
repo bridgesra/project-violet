@@ -15,11 +15,9 @@ def plot_heatmaps(sessions: List[Dict[str, Any]], reconfig_indices: List[int]):
     plt.xlabel("Session")
     plt.ylabel("Tactic")
     plt.yticks(range(len(tactics)), tactics)
-    plt.show()
 
     plt.figure(figsize=(15, 20))
     plt.imshow(mitre_dist_data["techniques_heatmap"])
     plt.xlabel("Session")
     plt.ylabel("Technique")
     plt.yticks(range(len(techniques)), techniques)
-    plt.show()
