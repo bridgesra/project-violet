@@ -21,7 +21,6 @@ def get_new_hp_logs():
 
     log_output = process.stdout.read().strip()
     if log_output:
-        #print(log_output)
         try:
             log_lines = log_output.strip().split('\n')
             logs = [json.loads(line) for line in log_lines if line.strip()]
@@ -30,8 +29,4 @@ def get_new_hp_logs():
             # If parsing fails, return raw logs as fallback
             return {"raw_logs": log_output, "error": "Failed to parse JSON"}
 
-        # trace = langfuse.trace(name="on-demand-log-check")
-        # for line in log_output.splitlines():
-        #     trace.span(name="log").log(line)
-
-    return []  # Return empty list instead of empty string
+    return [] 

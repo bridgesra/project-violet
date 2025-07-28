@@ -10,8 +10,6 @@ import Red.tools as red_tools
 from Utils.jsun import append_json_to_file, save_json_to_file
 from Red.terminal_io import start_ssh
 
-tools = sangria_config.tools
-
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_client = openai.OpenAI()
 
@@ -60,12 +58,12 @@ def create_json_log(messages):
     # return json_string
 # %%
 
-def openai_call(model, messages, tools, tool_choice, wait_time=1):
+def openai_call(model, messages, tool_choice, wait_time=1):
     try:
         return openai_client.chat.completions.create(
             model=model,
             messages=messages,
-            tools=tools,
+            tools=sangria_config.tools,
             tool_choice=tool_choice
         )
 
@@ -73,7 +71,7 @@ def openai_call(model, messages, tools, tool_choice, wait_time=1):
         print("OpenAI API limit reached, waiting", wait_time, "seconds...")
         print("Might also be out of money", e.message)
         time.sleep(wait_time)
-        return openai_call(model, messages, tools, tool_choice, wait_time * 2)
+        return openai_call(model, messages, tool_choice, wait_time * 2)
 
 def run_single_attack(messages, max_session_length, full_logs_path, attack_counter=0, config_counter=0):
     '''
@@ -98,7 +96,7 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
 
         print(f'{BOLD}Iteration {i+1} / {max_session_length}, Attack {attack_counter+1}, Configuration {config_counter}{RESET}')
 
-        assistant_response = openai_call(config.llm_model_sangria, messages, tools, "auto")
+        assistant_response = openai_call(config.llm_model_sangria, messages, "auto")
 
         total_cached_tokens += assistant_response.usage.prompt_tokens_details.cached_tokens
         total_completion_tokens += assistant_response.usage.completion_tokens
@@ -144,9 +142,6 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
             }
             messages.append(tool_response)
             append_json_to_file(tool_response, full_logs_path, False)
-
-            # messages[-1]["honeypot_logs"] = last_terminal_input_tool.get("honeypot_logs", "")
-
 
             BOLD   = "\033[1m"
             RESET  = "\033[0m"

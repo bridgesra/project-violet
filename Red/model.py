@@ -11,18 +11,13 @@ class LLMModel(str, Enum):
     """Enumeration LLM models."""
     GPT_4_1_NANO = "gpt-4.1-nano"
     GPT_4_1 = "gpt-4.1"
-    GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
-    GPT_4O_MINI = "gpt-4o-mini"
     GPT_4_1_MINI = "gpt-4.1-mini"
     O4_MINI = "o4-mini"
-    OLLAMA_LLAMA32_3b = "llama3.2:3b"
-    OLLAMA_DEEPSEEK_R1_5b = "deepseek-r1:1.5b"
 
 class ReconfigCriteria(str, Enum):
     NO_RECONFIG = "no_reconfig"
     BASIC = "basic"
-    MEAN_INCREASE = "mean_increase"
     ENTROPY = "entropy"
     T_TEST = "t_test"
 

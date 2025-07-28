@@ -1,12 +1,4 @@
-from Red.model import LLMHost
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques, retrieve_unique_tactics
-
-
-model_host = LLMHost.OPENAI  # change when using Ollama
-
-# Can have prompt. C, I, A or general depending on intended purpose of attack.
-# C = Confidentiality, I = Integrity, A = Availability.
-
 
 technique_options = retrieve_unique_techniques()
 technique_options = [
@@ -20,8 +12,6 @@ tactic_options = [
     f"{tactic['id']}:{tactic['name']}" for tactic in tactic_options
 ]
 tactic_options.append("TA0000:Harmless")
-
-
 
 terminal_input = {
         "type": "function",

@@ -1,17 +1,16 @@
-# %%
-import json
 from dotenv import load_dotenv
 load_dotenv()
 import os
 import config
 from pathlib import Path
 
-from Red import attacker_prompts
+from Red import attacker_prompt
 from Red.sangria import run_single_attack
 from Red.extraction import extract_session
 
 from Blue.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
 from Blue.utils import acquire_config_lock, release_config_lock
+
 from Blue_Lagoon.honeypot_tools import start_dockers, stop_dockers
 
 from Utils.meta import create_experiment_folder, select_reconfigurator
@@ -57,12 +56,11 @@ def main():
         logs_path = full_logs_path / f"attack_{config_attack_counter}.json"
 
         messages = [
-            {'role': 'system', 'content': attacker_prompts.attacker_prompt},
+            {'role': 'system', 'content': attacker_prompt.prompt},
             {"role": "user", "content": "What is your next move?"}
         ]
 
         logs, tokens_used = run_single_attack(messages, config.max_session_length, logs_path, config_attack_counter-1, config_counter)
-
 
         # extract session and add attack pattern to set
         session = extract_session(logs)
@@ -78,7 +76,7 @@ def main():
             if not config.simulate_command_line:
                 stop_dockers()
 
-            config_id, honeypot_config = generate_new_honeypot_config(base_path)
+            honeypot_config = generate_new_honeypot_config(base_path)
             
             lock_file = acquire_config_lock()
             set_honeypot_config(honeypot_config)
@@ -104,5 +102,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# %%

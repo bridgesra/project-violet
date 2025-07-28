@@ -313,16 +313,16 @@ def generate_new_honeypot_config(experiment_base_path=None, prev_config_path=Non
 
             config_id = config.get('id', None)
             print("\nConfig Object saved with id:", config_id)
-            return config_id, config
+            return config
 
         except Exception as e:
             print(f"Error generating config: {e}")
             if attempts == 2:
                 print("Failed to generate config after 3 attempts. Aborting.")
-                return None, None
+                return None
             
     print("Failed to generate config after 3 attempts. Aborting.")
-    return None, None
+    return None
             
 if __name__ == "__main__":
     config_id, config = generate_new_honeypot_config()
