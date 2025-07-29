@@ -43,7 +43,7 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
                         self.alpha
                     )
                 )
-                self.eps.append(self.tolerance * np.std(self.session_lengths))
+                self.eps.append(self.tolerance * np.std(self.session_lengths, ddof=1))
             case "tactic_sequences":
                 tactic_sequence_data = measure_tactic_sequences([session])
                 dists_list = []
@@ -61,7 +61,7 @@ class TTestReconfigCriterion(AbstractReconfigCriterion):
                             self.alpha
                         )
                     )
-                    self.eps.append(self.tolerance * np.std(dists_list))
+                    self.eps.append(self.tolerance * np.std(dists_list, ddof=1))
         
     def should_reconfigure(self):
         if not self.moes:
