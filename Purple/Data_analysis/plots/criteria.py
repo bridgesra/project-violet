@@ -4,14 +4,14 @@ from Purple.Data_analysis.utils import Experiments, compute_confidence_interval
 import matplotlib.pyplot as plt
 import editdistance
 import numpy as np
-from typing import List, Optional
+from typing import List
 
 def plot_criteria(
         experiments: Experiments,
         experiment_names: List[str],
         cutoff_criterion_reconfig_list: List[bool],
-        restart_configs: bool = False,
-        subplot: bool = False,
+        restart_configs: bool = True,
+        subplot: bool = True,
         ld_alpha: float = 0.05,
         ld_eps: float = 0.2,
         sl_alpha: float = 0.05,
@@ -127,10 +127,15 @@ def plot_criteria(
         sl_config_datas.append((config_mus, config_margins, criterion_indices, cutoff_criterion_indices))
 
     # plotting
-    titles = ["levenshtein distance", "session length", "config levenshtein distance", "config session length"]
+    ylabels = [
+        "Levenshtein distance running average",
+        "Session length running average",
+        "Levenshtein distance running average per config",
+        "Session length running average per config",
+    ]
     ylims = [(0, 100), (0, 100), (0, 100), (0, 100)]
 
-    for datas, title, ylim in zip([ld_datas, sl_datas, ld_config_datas, sl_config_datas], titles, ylims):
+    for datas, ylabel, ylim in zip([ld_datas, sl_datas, ld_config_datas, sl_config_datas], ylabels, ylims):
         plt.figure(figsize=(8, 6))
         n_exps = len(experiments)
         for i, (
@@ -157,7 +162,7 @@ def plot_criteria(
                         plt.axvline(values[index] + 0.5, color=colors.scheme[i], alpha=0.2, linestyle=":")
             else:
                 prev_index = 0
-                indices = criterion_indices if cutoff_criterion_reconfig + [len(mus)] else list(reconfig_indices) + [len(mus)]
+                indices = criterion_indices + [len(mus)] if cutoff_criterion_reconfig else list(reconfig_indices) + [len(mus)]
                 for j, index in enumerate(indices):
                     config_mus = mus[prev_index:index]
                     config_margins = margins[prev_index:index]
@@ -167,9 +172,8 @@ def plot_criteria(
                     plt.fill_between(values, lower, upper, alpha=0.2, color=colors.scheme[j])
                     plt.plot(values, config_mus, color=colors.scheme[j], label=f"{exp_name} config {j}")
                     prev_index = index
-            plt.title(title)
-            plt.xlabel("Sequence")
-            plt.ylabel("Mean")
+            plt.xlabel("Session")
+            plt.ylabel(ylabel)
             plt.ylim(ylim)
 
         if not cutoff_criterion_reconfig:
