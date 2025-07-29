@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, List, Any
+from typing import Dict, Any
 from Purple.Data_analysis.utils import Sessions
 from collections import Counter
 
@@ -33,6 +33,9 @@ def measure_session_length(sessions: Sessions) -> Dict[str, Any]:
         "middle_range": q3 - q1,
         "five_most_common": five_most_common,
     }
-    results = { key:float(value) if key != "five_most_common" else [(int(pair[0]), pair[1]) for pair in value] for key, value in results.items()}
+    results = { 
+        key:float(value) if key != "five_most_common" else [(int(pair[0]), pair[1]) for pair in value] 
+        for key, value in results.items()
+    }
     results["session_lengths"] = session_lengths
     return results

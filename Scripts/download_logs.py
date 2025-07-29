@@ -34,7 +34,8 @@ if not selected_experiments:
     sys.exit(0)
 
 save_attacks = questionary.confirm(
-    "Do you you want to save attack files as well? (this requires way more storage)"
+    "Do you you want to save attack files as well? (this requires way more storage)",
+    default=False
 ).ask()
 
 for experiment in selected_experiments:

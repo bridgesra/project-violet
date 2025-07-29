@@ -1,7 +1,7 @@
 import editdistance
 import numpy as np
 from typing import Dict, List, Any, Literal
-from Purple.Data_analysis.utils import Sessions
+from Purple.Data_analysis.utils import Sessions, compute_confidence_interval
 
 def measure_tactic_sequences(sessions: Sessions) -> Dict[str, Any]:
     return measure_sequences(sessions, "tactic")
@@ -17,7 +17,6 @@ def measure_sequences(sessions: Sessions,
     t_to_index: Dict[str, int] = {}
     sequences: List[List[str]] = []
     indexed_sequences: List[List[int]] = []
-    min_distances: List[int] = []
 
     for session in sessions:
         seq = []
@@ -30,22 +29,11 @@ def measure_sequences(sessions: Sessions,
                 t_to_index[t] = len(t_to_index)
         indexed_seq = [t_to_index[t] for t in seq]
         
-        if len(indexed_sequences) > 0:
-            if indexed_seq != "":
-                min_distance = min([editdistance.eval(prev_seq, indexed_seq) 
-                    for prev_seq in indexed_sequences])
-                min_distances.append(min_distance)
-            else:
-                min_distances.append(min_distances[-1])
-        else:
-            min_distances.append(np.inf)
-
         sequences.append(seq)
         indexed_sequences.append(indexed_seq)
 
     results = {
         f"{t_name}": t_to_index,
-        "min_distances": min_distances,
         "sequences": sequences,
         "indexed_sequences": indexed_sequences,
     }

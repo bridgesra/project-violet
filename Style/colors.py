@@ -9,5 +9,7 @@ red = "#DC263B"
 purple = "#753CE2"
 yellow = "#FFB000"
 orange = "#FE6100"
+seafoam = "#65B9AE"
+magenta = "#D051A2"
 
-scheme = [blue, red, purple, yellow, orange]
+scheme = [blue, red, purple, yellow, orange, seafoam, magenta]

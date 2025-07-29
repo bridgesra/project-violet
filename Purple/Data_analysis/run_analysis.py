@@ -8,18 +8,7 @@ import matplotlib.pyplot as plt
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from Style import colors
 from Purple.Data_analysis.utils import extract_experiment
-from Purple.Data_analysis.metrics import (
-    measure_session_length,
-    measure_mitre_distribution,
-    measure_entropy_session_length,
-    measure_entropy_techniques,
-    measure_entropy_tactics,
-    measure_technique_sequences,
-    measure_tactic_sequences,
-    measure_command_sequences
-)
 from Purple.Data_analysis.plots import (
     plot_mitre_data,
     plot_session_length,
@@ -54,12 +43,19 @@ def main():
         ) for exp_name in selected_experiments
     ]
 
+    def prepare_plot_criteria(exps, exp_names):
+        cutoff_experiments = questionary.checkbox(
+            "Select experiments to apply cutoff option:",
+            choices=exp_names
+        ).ask()
+        cutoff_list = [name in cutoff_experiments for name in exp_names]
+        plot_criteria(exps, exp_names, cutoff_list)
+
     plot_options = {
         'Session Length': plot_session_length,
         'MITRE Distribution': plot_mitre_data,
         'Entropy': plot_entropy,
-        'Criteria without cutoff': plot_criteria,
-        'Criteria with cutoff': lambda a, b: plot_criteria(a,b,cutoff_criterion_reconfig=True),
+        'Criteria': prepare_plot_criteria,
     }
 
     chosen_plots = questionary.checkbox(
