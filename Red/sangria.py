@@ -57,12 +57,12 @@ def create_json_log(messages):
     # return json_string
 # %%
 
-def openai_call(model, messages, tool_choice, wait_time=1):
+def openai_call(model, messages, tool_list, tool_choice, wait_time=1):
     try:
         return openai_client.chat.completions.create(
             model=model,
             messages=messages,
-            tools=tools,
+            tools=tool_list,
             tool_choice=tool_choice
         )
 
@@ -70,7 +70,7 @@ def openai_call(model, messages, tool_choice, wait_time=1):
         print("OpenAI API limit reached, waiting", wait_time, "seconds...")
         print("Might also be out of money", e.message)
         time.sleep(wait_time)
-        return openai_call(model, messages, tool_choice, wait_time * 2)
+        return openai_call(model, messages, tool_list, tool_choice, wait_time * 2)
 
 def run_single_attack(messages, max_session_length, full_logs_path, attack_counter=0, config_counter=0):
     '''
@@ -95,7 +95,7 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
 
         print(f'{BOLD}Iteration {i+1} / {max_session_length}, Attack {attack_counter+1}, Configuration {config_counter}{RESET}')
 
-        assistant_response = openai_call(config.llm_model_sangria, messages, "auto")
+        assistant_response = openai_call(config.llm_model_sangria, messages, tools, "auto")
 
         total_cached_tokens += assistant_response.usage.prompt_tokens_details.cached_tokens
         total_completion_tokens += assistant_response.usage.completion_tokens
