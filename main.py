@@ -48,7 +48,7 @@ def main():
     if not config.simulate_command_line:
         save_json_to_file(honeypot_config, config_path / f"honeypot_config.json")
 
-    for i in range(config.num_of_attacks):
+    for _ in range(config.num_of_attacks):
         config_attack_counter += 1
         os.makedirs(config_path, exist_ok=True)
         print(f"{BOLD}Attack {config_attack_counter} / {config.num_of_attacks}, configuration {config_counter}{RESET}")
@@ -70,7 +70,7 @@ def main():
         tokens_used_list.append(tokens_used)
         append_json_to_file(session, config_path / f"sessions.json", False)
 
-        if reconfigurator.should_reconfigure() and config_attack_counter >= config.min_num_of_attacks_reconfig:  
+        if reconfigurator.should_reconfigure():  
             print(f"{BOLD}Reconfiguring: Using {config.reconfig_method}.{RESET}")
 
             if not config.simulate_command_line:
@@ -81,8 +81,7 @@ def main():
             lock_file = acquire_config_lock()
             set_honeypot_config(honeypot_config)
 
-            if reconfigurator.reset_every_reconfig:
-                reconfigurator.reset()
+            reconfigurator.reset()
 
             config_counter += 1
             config_attack_counter = 0

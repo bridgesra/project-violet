@@ -1,10 +1,10 @@
 from Red.reconfiguration.abstract import AbstractReconfigCriterion
 
 class BasicReconfigCriterion(AbstractReconfigCriterion):
-    def __init__(self, interval: int, reset_every_reconfig: bool = False):
+    def __init__(self, interval: int):
         assert interval >= 0, f"The interval to reconfig must be non-negative ({interval} < 0)"
         self.interval = interval
-        super().__init__(reset_every_reconfig)
+        super().__init__()
 
     def reset(self):
         self.num_sessions = 0

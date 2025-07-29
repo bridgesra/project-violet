@@ -10,7 +10,7 @@ import jsonschema
 import sys
 import time
 import fcntl
-from config import llm_model_config
+from config import llm_model_reconfig
 from Utils.jsun import load_json
 
 # Add parent directory to sys.path to allow imports from project root
@@ -34,7 +34,7 @@ def query_openai(prompt: str, model: str = None, temperature: float = 0.7) -> st
     """
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     if model is None:
-        model = llm_model_config
+        model = llm_model_reconfig
     openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
     response = openai_client.chat.completions.create(
         model=model,
@@ -222,7 +222,7 @@ def generate_config_with_llm(config_prompt):
     """
     Use the query_openai function to generate a new honeypot config from the LLM, then parse the result as JSON or YAML.
     """
-    llm_output = query_openai(config_prompt, model=llm_model_config)
+    llm_output = query_openai(config_prompt, model=llm_model_reconfig)
     json_str = extract_json(llm_output)
     try:
         config = json.loads(json_str)
