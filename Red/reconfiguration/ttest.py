@@ -18,14 +18,14 @@ VARIABLES = ["session_length", "tactic_sequences"]
 
 class TTestReconfigCriterion(AbstractReconfigCriterion):
     def __init__(self, variable: str, tolerance: float, 
-            confidence_level: float, reset_every_reconfig: bool = False):
+            confidence_level: float):
         assert variable in VARIABLES, f"Variable '{variable}' is not supported. Supported variables: {VARIABLES}"
         self.variable = variable
         self.tolerance = tolerance
         assert 0 < confidence_level < 1, f"Confidence level {self.confidence_level} is not in the range (0,1)"
         self.confidence_level = confidence_level
         self.alpha = 1 - confidence_level
-        super().__init__(reset_every_reconfig)
+        super().__init__()
 
     def reset(self):
         self.session_lengths: List[float] = []

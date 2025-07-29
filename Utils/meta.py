@@ -8,7 +8,7 @@ from Red.model import ReconfigCriteria
 
 def create_experiment_folder(experiment_name=None):
     # timestamp = datetime.datetime.now().isoformat()[:-7]
-    timestamp = datetime.datetime.now().strftime(config.ISO_FORMAT)
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H_%M_%S")
 
     folder_name = f"experiment_{timestamp}"
     if experiment_name:
@@ -33,14 +33,12 @@ def create_experiment_folder(experiment_name=None):
 def create_metadata():
     md = {
         "llm_model_sangria": config.llm_model_sangria,
-        "llm_model_config": config.llm_model_config,
+        "llm_model_reconfig": config.llm_model_reconfig,
         "simulate_command_line": config.simulate_command_line,
         "num_of_attacks": config.num_of_attacks,
-        "min_num_of_attacks_reconfig": config.min_num_of_attacks_reconfig,
         "max_session_length": config.max_session_length,
         "reconfig_method": config.reconfig_method,
         "reconfig": {
-            "reset_every_reconfig": config.reset_every_reconfig,
             "ba_interval": config.ba_interval,
             "en_variable": config.en_variable,
             "en_window_size": config.en_window_size,
@@ -56,28 +54,20 @@ def create_metadata():
 def select_reconfigurator():
     match config.reconfig_method:
         case ReconfigCriteria.NO_RECONFIG:
-            reconfigurator = NeverReconfigCriterion(
-                    config.reset_every_reconfig
-                )
+            reconfigurator = NeverReconfigCriterion()
         case ReconfigCriteria.BASIC:
             reconfigurator = BasicReconfigCriterion(
-                    config.ba_interval,
-                    config.reset_every_reconfig
-                )
+                    config.ba_interval)
         case ReconfigCriteria.ENTROPY:
             reconfigurator = EntropyReconfigCriterion(
                     config.en_variable,
                     config.en_tolerance,
-                    config.en_window_size,
-                    config.reset_every_reconfig
-                )
+                    config.en_window_size)
         case ReconfigCriteria.T_TEST:
                 reconfigurator = TTestReconfigCriterion(
                     config.tt_variable,
                     config.tt_tolerance,
-                    config.tt_confidence,
-                    config.reset_every_reconfig
-                )
+                    config.tt_confidence)
         case _:
             raise ValueError(f"The reconfiguration criterion {config.reconfig_method} is not supported.")
         
