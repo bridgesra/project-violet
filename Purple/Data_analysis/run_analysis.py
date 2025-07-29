@@ -74,7 +74,7 @@ def main():
     for plot_name in chosen_plots:
         plot_func = plot_options[plot_name]
         plot_func(experiments, selected_experiments)
-    plt.show()
+        plt.show()
 
 if __name__ == "__main__":
     main()

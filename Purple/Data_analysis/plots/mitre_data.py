@@ -8,7 +8,6 @@ def plot_mitre_data(experiments: Experiments, experiment_names: List[str]):
     mitre_dist_datas = [measure_mitre_distribution(sessions) for sessions,_,_ in experiments]
 
     for name in ["tactics", "techniques"]:
-        plt.figure(figsize=(12, 6))
         for plot_data_name, title in zip(
             [
                 f"session_cum_num_{name}",
@@ -19,6 +18,7 @@ def plot_mitre_data(experiments: Experiments, experiment_names: List[str]):
                 f"Number of unique {name} per session"
             ]
         ):
+            plt.figure(figsize=(12, 6))
             for i, (mitre_dist_data, (_, _, reconfig_indices), exp_name) in enumerate(
                     zip(mitre_dist_datas, experiments, experiment_names)):
                 plt.plot(
@@ -33,5 +33,4 @@ def plot_mitre_data(experiments: Experiments, experiment_names: List[str]):
                 plt.ylabel(f"Number of unique {name}")
                 for index in reconfig_indices:
                     plt.axvline(index - 0.5, color=colors.scheme[i], linestyle="--", alpha=0.2)
-                plt.ylim(bottom=0)
             plt.legend()
