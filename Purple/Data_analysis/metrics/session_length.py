@@ -3,9 +3,9 @@ from typing import Dict, Any
 from Purple.Data_analysis.utils import Sessions
 from collections import Counter
 
-def measure_session_length(sessions: Sessions) -> Dict[str, Any]:
+def measure_session_length(sessions: Sessions, remove_zeros: bool = False) -> Dict[str, Any]:
     session_lengths = [session.get("length", 0) for session in sessions]
-    session_lengths = np.array(session_lengths)
+    session_lengths = np.array([length for length in session_lengths if length > 0])
 
     mean_length = session_lengths.mean()
     var_length = session_lengths.var()

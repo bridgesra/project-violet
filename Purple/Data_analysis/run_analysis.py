@@ -13,7 +13,8 @@ from Purple.Data_analysis.plots import (
     plot_mitre_data,
     plot_session_length,
     plot_criteria,
-    plot_entropy
+    plot_entropy,
+    plot_criteria_box
 )
 
 logs_path = Path(__file__).resolve().parent.parent.parent / "logs"
@@ -21,11 +22,13 @@ filter_empty_sessions = False
 use_omni_sessions = False
 
 def main():
+    # List available experiments
     all_experiments = sorted(os.listdir(logs_path), reverse=False)
     if not all_experiments:
         print("No experiments found under", logs_path)
         sys.exit(1)
 
+    # Select experiments
     selected_experiments = questionary.checkbox(
         "Select experiments to analyze:",
         choices=all_experiments
@@ -35,6 +38,15 @@ def main():
         print("No experiments selected, exiting.")
         sys.exit(0)
 
+    # Optionally rename each selected experiment
+    renamed_experiments = []
+    for exp in selected_experiments:
+        new_name = questionary.text(
+            f"Enter display name for experiment '{exp}' (leave blank to keep original):"
+        ).ask()
+        renamed_experiments.append(new_name.strip() or exp)
+
+    # Extract data for each experiment
     experiments = [
         extract_experiment(
             logs_path / exp_name,
@@ -56,8 +68,10 @@ def main():
         'MITRE Distribution': plot_mitre_data,
         'Entropy': plot_entropy,
         'Criteria': prepare_plot_criteria,
+        'Criteria boxplot': plot_criteria_box,
     }
 
+    # Select plots to generate
     chosen_plots = questionary.checkbox(
         "Select plots to generate:",
         choices=list(plot_options.keys())
@@ -67,9 +81,11 @@ def main():
         print("No plots selected, exiting.")
         sys.exit(0)
 
+    # Generate and display plots with renamed labels
     for plot_name in chosen_plots:
         plot_func = plot_options[plot_name]
-        plot_func(experiments, selected_experiments)
+        # Pass renamed_experiments for display
+        plot_func(experiments, renamed_experiments)
         plt.show()
 
 if __name__ == "__main__":

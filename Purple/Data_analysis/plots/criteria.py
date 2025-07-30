@@ -10,8 +10,8 @@ def plot_criteria(
         experiments: Experiments,
         experiment_names: List[str],
         cutoff_criterion_reconfig_list: List[bool],
-        restart_configs: bool = False,
-        subplot: bool = False,
+        restart_configs: bool = True,
+        subplot: bool = True,
         ld_alpha: float = 0.05,
         ld_eps: float = 0.2,
         sl_alpha: float = 0.05,
@@ -99,11 +99,11 @@ def plot_criteria(
                 margins.append(moe)
                 mus.append(np.mean(all_session_lengths))
 
-                config_moe = compute_confidence_interval(np.array(session_lengths[0:i]), sl_alpha)
+                config_moe = compute_confidence_interval(np.array(session_lengths[0:i+1]), sl_alpha)
                 config_margins.append(config_moe)
-                config_mus.append(np.mean(session_lengths[0:i]))
+                config_mus.append(np.mean(session_lengths[0:i+1]))
 
-                eps = sl_eps * np.std(session_lengths[0:i], ddof=1)
+                eps = sl_eps * np.std(session_lengths[0:i+1], ddof=1)
                 if config_moe < eps:
                     if not reconfigured:
                         criterion_indices.append(i+index_start)
