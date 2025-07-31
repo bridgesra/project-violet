@@ -2,7 +2,7 @@ import config
 import datetime
 import os
 import json
-from Reconfigurator.criterias import EntropyReconfigCriterion, BasicReconfigCriterion, \
+from Reconfigurator.criteria import EntropyReconfigCriterion, BasicReconfigCriterion, \
      NeverReconfigCriterion, TTestReconfigCriterion
 from Sangria.model import ReconfigCriteria
 
