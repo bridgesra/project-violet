@@ -4,7 +4,6 @@ class LLMModel(str, Enum):
     """Enumeration LLM models."""
     GPT_4_1_NANO = "gpt-4.1-nano"
     GPT_4_1 = "gpt-4.1"
-    GPT_4 = "gpt-4"
     GPT_4_1_MINI = "gpt-4.1-mini"
     O4_MINI = "o4-mini"
 

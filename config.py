@@ -17,7 +17,7 @@ simulate_command_line = False
 num_of_sessions = 400
 max_session_length = 100
 
-# Reconfiguration criterias
+# Reconfiguration criteria settings
 ## Basic reconfiguration
 ba_interval: int = 100
 
