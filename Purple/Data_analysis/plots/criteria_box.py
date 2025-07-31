@@ -27,39 +27,48 @@ def plot_criteria_box(
         all_mu = np.mean(all_session_lengths)
         criterion_mus = []
         criterion_moes = []
+        criterion_stds = []
         criterion_reconfig_indices = []
         config_mus = []
         config_moes = []
+        config_stds = []
         for session_lengths in config_session_lengths:
             criterion_reconfig_index = None
             criterion_moe = None
             criterion_mu = None
+            criterion_std = None
             for i in range(len(session_lengths)):
                 criterion_mu = np.mean(session_lengths[0:i+1])
                 criterion_moe = compute_confidence_interval(np.array(session_lengths[0:i+1]), sl_alpha)
-                eps = sl_eps * np.std(session_lengths[0:i+1], ddof=1)
+                criterion_std = np.std(session_lengths[0:i+1], ddof=1)
+                eps = sl_eps * criterion_std
                 if criterion_moe < eps:
                     criterion_reconfig_index = i
             if not (criterion_reconfig_index is None):
                 criterion_mus.append(criterion_mu)
                 criterion_moes.append(criterion_moe)
+                criterion_stds.append(criterion_std)
                 criterion_reconfig_indices.append(criterion_reconfig_index)
             config_mu = np.mean(session_lengths)
             config_moe = compute_confidence_interval(np.array(session_lengths), sl_alpha)
+            config_std = np.std(session_lengths, ddof=1)
             config_mus.append(config_mu)
             config_moes.append(config_moe)
+            config_stds.append(config_std)
 
         sl_datas.append((
             all_mu,
             all_moe,
             np.array(config_mus), 
             np.array(config_moes),
+            np.array(config_stds),
             np.array(criterion_mus),
             np.array(criterion_moes),
+            np.array(criterion_stds),
             config_session_lengths
         ))
 
-    widths = [len(cfg_mus) for (_, _, cfg_mus, *_) in sl_datas]
+    widths = [len(cfg_mus) + 1 for (_, _, cfg_mus, *_) in sl_datas]
     n = len(sl_datas)
     fig, axes = plt.subplots(
         1, n,
@@ -72,8 +81,10 @@ def plot_criteria_box(
                 all_moe,
                 config_mus,
                 config_moes, 
+                config_stds,
                 criterion_mus,
                 criterion_moes,
+                criterion_stds,
                 config_session_lengths
             ),
             exp_name,
@@ -99,10 +110,10 @@ def plot_criteria_box(
             flierprops=dict(markeredgecolor=c),
             labels=sorted_xticks
         )
-        plt.xlabel("Configuration")
-        plt.ylabel("Session length")
+        ax.set_xlabel("Configuration")
+        if i == 0:
+            ax.set_ylabel("Session length")
     plt.tight_layout()
-
     plt.figure()
     for i, (
             (
@@ -110,8 +121,10 @@ def plot_criteria_box(
                 all_moe,
                 config_mus,
                 config_moes, 
+                config_stds,
                 criterion_mus,
                 criterion_moes,
+                criterion_stds,
                 config_session_lengths
             ),
             exp_name,
@@ -129,7 +142,7 @@ def plot_criteria_box(
             fmt='o:',
             color=colors.scheme[i],
             capsize=10,
-            label=exp_name  # Optional: for legend
+            label=exp_name
         )
         plt.xlabel("Configuration")
         plt.ylabel("Sample mean of session length (with 95% confidence interval)")
