@@ -4,12 +4,12 @@ import os
 import config
 from pathlib import Path
 
-from Red import attacker_prompt
-from Red.sangria import run_single_attack
-from Red.extraction import extract_session
+from Sangria import attacker_prompt
+from Sangria.sangria import run_single_attack
+from Sangria.extraction import extract_session
 
-from Blue.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
-from Blue.utils import acquire_config_lock, release_config_lock
+from Reconfigurator.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
+from Reconfigurator.utils import acquire_config_lock, release_config_lock
 
 from Blue_Lagoon.honeypot_tools import start_dockers, stop_dockers
 

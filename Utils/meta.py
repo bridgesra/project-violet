@@ -2,9 +2,9 @@ import config
 import datetime
 import os
 import json
-from Red.reconfiguration import EntropyReconfigCriterion, BasicReconfigCriterion, \
+from Reconfigurator.criterias import EntropyReconfigCriterion, BasicReconfigCriterion, \
      NeverReconfigCriterion, TTestReconfigCriterion
-from Red.model import ReconfigCriteria
+from Sangria.model import ReconfigCriteria
 
 def create_experiment_folder(experiment_name=None):
     # timestamp = datetime.datetime.now().isoformat()[:-7]

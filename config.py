@@ -1,4 +1,4 @@
-from Red.model import LLMModel, ReconfigCriteria
+from Sangria.model import LLMModel, ReconfigCriteria
 
 experiment_name = ""
 
