@@ -142,7 +142,7 @@ def plot_criteria_box(
             fmt='o:',
             color=colors.scheme[i],
             capsize=10,
-            label=exp_name 
+            label=exp_name
         )
         plt.xlabel("Configuration")
         plt.ylabel("Sample mean of session length (with 95% confidence interval)")
