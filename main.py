@@ -3,7 +3,7 @@ import os
 import config
 load_dotenv()
 os.environ["HP_MODEL"] = config.llm_model_blue_lagoon
-os.environ["RUN_ID"] = config.run_id
+os.environ["RUNID"] = config.run_id
 
 from pathlib import Path
 
