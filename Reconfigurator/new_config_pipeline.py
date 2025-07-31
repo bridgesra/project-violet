@@ -23,9 +23,9 @@ from Reconfigurator.utils import extract_json, cosine_similarity, clean_and_fina
 # Set up base directory and important paths
 BASE_DIR = Path(__file__).resolve().parent
 
-vulns_db_path = BASE_DIR.parent / 'Blue' / 'RagData' / 'vulnsDB_cleaned.json'
-vulns_embeddings_path = BASE_DIR.parent / 'Blue' / 'RagData' / 'vulns_cleaned_embeddings_bge_m3.npy'
-schema_path = BASE_DIR.parent / 'Blue' / 'RagData' / 'services_schema.json'
+vulns_db_path = BASE_DIR.parent / 'Reconfigurator' / 'RagData' / 'vulnsDB_cleaned.json'
+vulns_embeddings_path = BASE_DIR.parent / 'Reconfigurator' / 'RagData' / 'vulns_cleaned_embeddings_bge_m3.npy'
+schema_path = BASE_DIR.parent / 'Reconfigurator' / 'RagData' / 'services_schema.json'
 
 def query_openai(prompt: str, model: str = None, temperature: float = 0.7) -> str:
     """
