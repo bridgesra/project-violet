@@ -35,6 +35,7 @@ def create_metadata():
         "llm_model_sangria": config.llm_model_sangria,
         "llm_model_reconfig": config.llm_model_reconfig,
         "llm_model_blue_lagoon": config.llm_model_blue_lagoon,
+        "llm_provider_hp": config.llm_provider_hp,
         "simulate_command_line": config.simulate_command_line,
         "num_of_sessions": config.num_of_sessions,
         "max_session_length": config.max_session_length,
