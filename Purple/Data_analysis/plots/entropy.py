@@ -1,6 +1,6 @@
 from Purple.Data_analysis.metrics import measure_entropy_tactics, \
     measure_entropy_techniques, measure_entropy_session_length
-from Style import colors
+from Purple.Data_analysis import colors
 from Purple.Data_analysis.utils import Experiments
 from typing import List
 

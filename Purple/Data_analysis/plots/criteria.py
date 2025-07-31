@@ -1,5 +1,5 @@
 from Purple.Data_analysis.metrics import measure_tactic_sequences, measure_session_length
-from Style import colors
+from Purple.Data_analysis import colors
 from Purple.Data_analysis.utils import Experiments, compute_confidence_interval
 import matplotlib.pyplot as plt
 import editdistance

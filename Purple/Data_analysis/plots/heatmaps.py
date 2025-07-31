@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
 from Purple.Data_analysis.metrics import measure_mitre_distribution
-from Style import colors
+from Purple.Data_analysis import colors
 
 import matplotlib.pyplot as plt
 

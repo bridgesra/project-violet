@@ -12,7 +12,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 import ipywidgets as widgets
 from IPython.display import display
-from Style import colors
+from Purple.Data_analysis import colors
 import json
 import pprint
 import matplotlib.pyplot as plt
