@@ -1,5 +1,5 @@
 from Purple.Data_analysis.metrics import measure_session_length
-from Style import colors
+from Purple.Data_analysis import colors
 from Purple.Data_analysis.utils import Experiments
 from typing import List
 

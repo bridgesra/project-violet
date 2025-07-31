@@ -5,7 +5,7 @@ import questionary
 
 # Add parent directory to sys.path to allow imports from project root
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from Red.extraction import extract_session, extract_everything_session
+from Sangria.extraction import extract_session, extract_everything_session
 from Utils.jsun import load_json, append_json_to_file, save_json_to_file
 
 BASE_DIR = Path(__file__).resolve().parent.parent

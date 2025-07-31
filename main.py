@@ -1,15 +1,18 @@
 from dotenv import load_dotenv
-load_dotenv()
 import os
 import config
+load_dotenv()
+os.environ["HP_MODEL"] = config.llm_model_blue_lagoon
+os.environ["RUNID"] = config.run_id
+
 from pathlib import Path
 
-from Red import attacker_prompt
-from Red.sangria import run_single_attack
-from Red.extraction import extract_session
+from Sangria import attacker_prompt
+from Sangria.sangria import run_single_attack
+from Sangria.extraction import extract_session
 
-from Blue.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
-from Blue.utils import acquire_config_lock, release_config_lock
+from Reconfigurator.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
+from Reconfigurator.utils import acquire_config_lock, release_config_lock
 
 from Blue_Lagoon.honeypot_tools import start_dockers, stop_dockers
 
@@ -21,7 +24,7 @@ def main():
     base_path = create_experiment_folder(experiment_name=config.experiment_name)
     base_path = Path(base_path)
 
-    honeypot_config = get_honeypot_config(id=config.llm_provider, path="")
+    honeypot_config = get_honeypot_config(id=config.llm_provider_hp, path="")
 
     lock_file = acquire_config_lock()
     set_honeypot_config(honeypot_config)
@@ -48,10 +51,10 @@ def main():
     if not config.simulate_command_line:
         save_json_to_file(honeypot_config, config_path / f"honeypot_config.json")
 
-    for _ in range(config.num_of_attacks):
+    for _ in range(config.num_of_sessions):
         config_attack_counter += 1
         os.makedirs(config_path, exist_ok=True)
-        print(f"{BOLD}Attack {config_attack_counter} / {config.num_of_attacks}, configuration {config_counter}{RESET}")
+        print(f"{BOLD}Attack {config_attack_counter} / {config.num_of_sessions}, configuration {config_counter}{RESET}")
 
         logs_path = full_logs_path / f"attack_{config_attack_counter}.json"
 
@@ -98,6 +101,7 @@ def main():
             release_config_lock(lock_file)
 
         print("\n\n")
+    stop_dockers()
 
 if __name__ == "__main__":
     main()

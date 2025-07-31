@@ -1,5 +1,5 @@
 from Purple.Data_analysis.metrics import measure_mitre_distribution
-from Style import colors
+from Purple.Data_analysis import colors
 from Purple.Data_analysis.utils import Experiments
 import matplotlib.pyplot as plt
 from typing import List, Optional

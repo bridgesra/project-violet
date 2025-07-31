@@ -2,9 +2,9 @@ import config
 import datetime
 import os
 import json
-from Red.reconfiguration import EntropyReconfigCriterion, BasicReconfigCriterion, \
+from Reconfigurator.criterias import EntropyReconfigCriterion, BasicReconfigCriterion, \
      NeverReconfigCriterion, TTestReconfigCriterion
-from Red.model import ReconfigCriteria
+from Sangria.model import ReconfigCriteria
 
 def create_experiment_folder(experiment_name=None):
     # timestamp = datetime.datetime.now().isoformat()[:-7]
@@ -34,8 +34,10 @@ def create_metadata():
     md = {
         "llm_model_sangria": config.llm_model_sangria,
         "llm_model_reconfig": config.llm_model_reconfig,
+        "llm_model_blue_lagoon": config.llm_model_blue_lagoon,
+        "llm_provider_hp": config.llm_provider_hp,
         "simulate_command_line": config.simulate_command_line,
-        "num_of_attacks": config.num_of_attacks,
+        "num_of_sessions": config.num_of_sessions,
         "max_session_length": config.max_session_length,
         "reconfig_method": config.reconfig_method,
         "reconfig": {
