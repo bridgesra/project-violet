@@ -1,7 +1,7 @@
 from Sangria.model import LLMModel, ReconfigCriteria
 
-experiment_name = "test"
-run_id = "10" # 10 - 99, If multiple experiments are run in parallel, each need unique run_id.
+experiment_name = ""
+run_id = "16" # 10 - 99, If multiple experiments are run in parallel, each need unique run_id.
 
 # Experiment settings
 llm_model_sangria = LLMModel.GPT_4_1_MINI
