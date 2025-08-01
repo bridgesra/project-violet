@@ -1,4 +1,4 @@
-from Reconfigurator.criterias.abstract import AbstractReconfigCriterion
+from Reconfigurator.criteria.abstract import AbstractReconfigCriterion
 
 class BasicReconfigCriterion(AbstractReconfigCriterion):
     def __init__(self, interval: int):
