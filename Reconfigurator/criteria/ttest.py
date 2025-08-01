@@ -2,7 +2,7 @@ import editdistance
 import numpy as np
 from scipy.stats import t
 from typing import List, Dict, Any
-from Reconfigurator.criterias.abstract import AbstractReconfigCriterion
+from Reconfigurator.criteria.abstract import AbstractReconfigCriterion
 from Purple.Data_analysis.metrics import measure_tactic_sequences
 
 def compute_confidence_interval(session_lengths: np.ndarray, alpha: float) -> float:

@@ -3,7 +3,7 @@ import numpy as np
 
 from typing import List
 from collections import Counter
-from Reconfigurator.criterias.abstract import AbstractReconfigCriterion
+from Reconfigurator.criteria.abstract import AbstractReconfigCriterion
 
 VARIABLES = ["techniques", "session_length"]
 

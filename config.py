@@ -1,6 +1,6 @@
 from Sangria.model import LLMModel, ReconfigCriteria
 
-experiment_name = ""
+experiment_name = "test"
 run_id = "10" # 10 - 99, If multiple experiments are run in parallel, each need unique run_id.
 
 # Experiment settings
@@ -8,14 +8,14 @@ llm_model_sangria = LLMModel.GPT_4_1_MINI
 llm_model_blue_lagoon = LLMModel.GPT_4_1_MINI
 llm_model_reconfig = LLMModel.GPT_4_1_MINI
 llm_provider_hp = "openai" # openai / togetherai / static
-reconfig_method: ReconfigCriteria = ReconfigCriteria.BASIC # NO_RECONFIG / BASIC / ENTROPY / T_TEST 
+reconfig_method: ReconfigCriteria = ReconfigCriteria.NO_RECONFIG # NO_RECONFIG / BASIC / ENTROPY / T_TEST 
 
 # Simulate HP for testing purposes
 simulate_command_line = False
 
 # Session settings
-num_of_sessions = 400
-max_session_length = 100
+num_of_sessions = 2
+max_session_length = 20
 
 # Reconfiguration criteria settings
 ## Basic reconfiguration
