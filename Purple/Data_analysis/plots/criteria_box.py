@@ -75,6 +75,9 @@ def plot_criteria_box(
         figsize=(sum(widths) * 1, 4),       # you can adjust the 0.5 scale factor
         gridspec_kw={'width_ratios': widths}
     )
+    # Ensure axes is always iterable (handle single subplot case)
+    if n == 1:
+        axes = [axes]
     for i, (
             (
                 all_mu, 

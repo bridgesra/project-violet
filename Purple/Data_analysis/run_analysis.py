@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 import questionary
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 # Add parent directory to sys.path to allow imports from project root
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -66,6 +67,16 @@ def main():
         ordered_raw.append(selected_experiments[idx])
         remaining.remove(next_exp)
 
+    # Create output directory in the experiment folder
+    # Use the first selected experiment as the primary output location
+    output_dir = logs_path / ordered_raw[0] / "analysis_plots"
+    output_dir.mkdir(exist_ok=True)
+    
+    # Create a timestamp for this analysis run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    print(f"\nPlots will be saved to: {output_dir}")
+
     # Extract data for each experiment in the chosen order
     experiments = [
         extract_experiment(
@@ -102,12 +113,30 @@ def main():
         print("No plots selected, exiting.")
         sys.exit(0)
 
-    # Generate and display plots with reordered labels
+    # Generate and save plots with reordered labels
     for plot_name in chosen_plots:
+        print(f"\nGenerating plot: {plot_name}")
         plot_func = plot_options[plot_name]
         # Pass ordered display names for labeling
         plot_func(experiments, ordered_names)
-        plt.show()
+        
+        # Save all open figures
+        figs = [plt.figure(n) for n in plt.get_fignums()]
+        for i, fig in enumerate(figs):
+            # Create a clean filename
+            clean_name = plot_name.lower().replace(' ', '_')
+            if len(figs) > 1:
+                filename = f"{clean_name}_{i+1}_{timestamp}.png"
+            else:
+                filename = f"{clean_name}_{timestamp}.png"
+            
+            filepath = output_dir / filename
+            fig.savefig(filepath, dpi=300, bbox_inches='tight')
+            print(f"  Saved: {filename}")
+        
+        plt.close('all')  # Close all figures after saving
+    
+    print(f"\nAll plots saved to: {output_dir}")
 
 if __name__ == "__main__":
     main()

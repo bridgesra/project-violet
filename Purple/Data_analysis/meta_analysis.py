@@ -1,24 +1,26 @@
 # %%
 import os
 import sys
-import questionary
-import numpy as np
 from pathlib import Path
 
-from Purple.Data_analysis.plots.heatmaps import plot_heatmaps
-from Purple.Data_analysis.plots.session_length import plot_session_length
 # Add parent directory to sys.path to allow imports from project root
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
+
+import questionary
+import numpy as np
 import ipywidgets as widgets
 from IPython.display import display
-from Purple.Data_analysis import colors
 import json
 import pprint
 import matplotlib.pyplot as plt
+import editdistance
+
+from Purple.Data_analysis.plots.heatmaps import plot_heatmaps
+from Purple.Data_analysis.plots.session_length import plot_session_length
+from Purple.Data_analysis import colors
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques
 from Purple.Data_analysis.utils import extract_experiment, compute_confidence_interval
-import editdistance
 
 logs_path = Path(__file__).resolve().parent.parent.parent / "logs"
 experiment_names = os.listdir(logs_path)[::-1]

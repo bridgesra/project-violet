@@ -4,15 +4,19 @@ Interactive menu system for Project Violet.
 
 Provides a user-friendly interface to:
 1. Start new experiments with configurable parameters
-2. Run Purple analysis on existing logs
+2. Prepare experiment data (extract and combine sessions)
+3. Run Purple analysis on existing logs
 """
 
 import questionary
 import subprocess
 import sys
 import re
+import os
 from pathlib import Path
 from Sangria.model import LLMModel, ReconfigCriteria
+from Sangria.extraction import extract_session, extract_everything_session
+from Utils.jsun import load_json, save_json_to_file, append_json_to_file
 
 
 def main():
@@ -26,7 +30,9 @@ def main():
 
         if choice == "Start New Experiment":
             configure_experiment()
-        elif choice == "Use Purple to Analyze Logs":
+        elif choice == "Prepare Experiment Data":
+            prepare_experiment_data()
+        elif choice == "Run Purple Analysis":
             run_purple_analysis()
         elif choice == "Exit":
             print("\nGoodbye!")
@@ -39,7 +45,8 @@ def show_main_menu():
         "What would you like to do?",
         choices=[
             "Start New Experiment",
-            "Use Purple to Analyze Logs",
+            "Prepare Experiment Data",
+            "Run Purple Analysis",
             "Exit"
         ],
         style=questionary.Style([
@@ -502,24 +509,374 @@ def run_experiment():
         traceback.print_exc()
 
 
+def prepare_experiment_data():
+    """Extract and combine session data from raw logs."""
+    print("\n" + "=" * 60)
+    print(" " * 10 + "PREPARE EXPERIMENT DATA")
+    print("=" * 60 + "\n")
+
+    print("This tool extracts sessions from raw experiment logs and")
+    print("prepares them for analysis.\n")
+
+    logs_path = Path(__file__).parent / "logs"
+
+    if not logs_path.exists():
+        print(f"❌ Logs directory not found at: {logs_path}\n")
+        return
+
+    all_experiments = sorted([d for d in os.listdir(logs_path) if (logs_path / d).is_dir()])
+
+    if not all_experiments:
+        print("❌ No experiments found in logs directory.\n")
+        return
+
+    # Ask extraction mode
+    extract_omni = select_extraction_mode()
+
+    # Select experiments
+    selected_experiments = questionary.checkbox(
+        "Select experiments to process:",
+        choices=all_experiments
+    ).ask()
+
+    if not selected_experiments:
+        print("\nNo experiments selected. Returning to main menu...\n")
+        return
+
+    # Confirm before processing
+    print(f"\n📋 Will process {len(selected_experiments)} experiment(s)")
+    print(f"   Extraction mode: {'All commands (omni)' if extract_omni else 'Honeypot commands only'}")
+
+    proceed = questionary.confirm(
+        "Proceed with data preparation?",
+        default=True
+    ).ask()
+
+    if not proceed:
+        print("\nCancelled. Returning to main menu...\n")
+        return
+
+    # Run extraction and combination
+    run_extraction_process(logs_path, selected_experiments, extract_omni)
+    run_combination_process(logs_path, selected_experiments, extract_omni)
+
+    print("\n" + "=" * 60)
+    print("✓ DATA PREPARATION COMPLETE")
+    print("=" * 60)
+    print("\nYou can now run Purple Analysis to visualize the data.\n")
+
+
+def select_extraction_mode():
+    """Ask user which extraction mode to use."""
+    print("Choose extraction mode:\n")
+    print("  • Honeypot commands only: Extract only commands that reached the honeypot")
+    print("  • All commands (omni): Extract all attacker commands including reconnaissance\n")
+
+    extract_omni = questionary.confirm(
+        "Extract all commands (omni mode)?",
+        default=False
+    ).ask()
+
+    return extract_omni
+
+
+def safe_listdir(p: Path):
+    """Return listdir if p exists and is a dir, else empty list."""
+    return os.listdir(p) if p.exists() and p.is_dir() else []
+
+
+def run_extraction_process(logs_path: Path, selected_experiments: list, extract_omni: bool):
+    """Extract sessions from raw logs."""
+    print("\n" + "-" * 60)
+    print("STEP 1: EXTRACTING SESSIONS")
+    print("-" * 60 + "\n")
+
+    session_file_name = "omni_sessions.json" if extract_omni else "sessions.json"
+
+    for experiment in selected_experiments:
+        experiment_path = logs_path / experiment
+        print(f">> Processing: {experiment}")
+
+        configs = filter(lambda name: name.startswith("hp_config"), safe_listdir(experiment_path))
+        sorted_configs = sorted(
+            configs,
+            key=lambda fn: int(Path(fn).stem.split('_')[-1])
+        )
+
+        if not sorted_configs:
+            print(f"   ⚠ No hp_config directories found, skipping.\n")
+            continue
+
+        all_sessions = []
+        all_sessions_path = experiment_path / session_file_name
+
+        for config in sorted_configs:
+            config_path = experiment_path / config
+            full_logs_path = config_path / "full_logs"
+            session_path = config_path / session_file_name
+
+            if not full_logs_path.exists():
+                print(f"   ⚠ {config}: No full_logs directory, skipping.")
+                continue
+
+            # Remove existing sessions file
+            if session_path.exists():
+                session_path.unlink()
+                print(f"   • Removed existing: {config}/{session_file_name}")
+
+            attack_files = safe_listdir(full_logs_path)
+            sorted_attacks = sorted(
+                [f for f in attack_files if f.endswith('.json')],
+                key=lambda fn: int(Path(fn).stem.split('_')[-1]) if '_' in Path(fn).stem else 0
+            )
+
+            extracted_count = 0
+            for attack in sorted_attacks:
+                attack_path = full_logs_path / attack
+                try:
+                    logs = load_json(attack_path)
+                    if extract_omni:
+                        session = extract_everything_session(logs)
+                    else:
+                        session = extract_session(logs)
+                    all_sessions.append(session)
+                    append_json_to_file(session, session_path, False)
+                    extracted_count += 1
+                except Exception as e:
+                    print(f"   ⚠ Error extracting {attack}: {e}")
+                    continue
+
+            print(f"   ✓ {config}: Extracted {extracted_count} sessions")
+
+        # Save combined sessions at experiment level
+        if all_sessions:
+            save_json_to_file(all_sessions, all_sessions_path, False)
+            print(f"   ✓ Created {session_file_name} ({len(all_sessions)} total sessions)\n")
+        else:
+            print(f"   ⚠ No sessions extracted\n")
+
+
+def run_combination_process(logs_path: Path, selected_experiments: list, extract_omni: bool):
+    """Combine sessions across hp_configs."""
+    print("-" * 60)
+    print("STEP 2: COMBINING SESSIONS")
+    print("-" * 60 + "\n")
+
+    for experiment in selected_experiments:
+        experiment_path = logs_path / experiment
+        print(f">> Processing: {experiment}")
+
+        configs = filter(lambda name: name.startswith("hp_config"), safe_listdir(experiment_path))
+        sorted_configs = sorted(
+            configs,
+            key=lambda fn: int(Path(fn).stem.split('_')[-1])
+        )
+
+        if not sorted_configs:
+            print(f"   ⚠ No hp_config directories found, skipping.\n")
+            continue
+
+        # Combine regular sessions
+        try:
+            sessions_list = []
+            for config in sorted_configs:
+                session_file = experiment_path / config / "sessions.json"
+                if session_file.exists():
+                    sessions_list.append(load_json(session_file))
+
+            if sessions_list:
+                combined_sessions = sum(sessions_list, [])
+                save_json_to_file(combined_sessions, experiment_path / "sessions.json")
+                print(f"   ✓ Combined {len(combined_sessions)} regular sessions")
+        except Exception as e:
+            print(f"   ⚠ Error combining sessions: {e}")
+
+        # Combine omni sessions if requested
+        if extract_omni:
+            try:
+                omni_sessions_list = []
+                for config in sorted_configs:
+                    omni_file = experiment_path / config / "omni_sessions.json"
+                    if omni_file.exists():
+                        omni_sessions_list.append(load_json(omni_file))
+
+                if omni_sessions_list:
+                    combined_omni_sessions = sum(omni_sessions_list, [])
+                    save_json_to_file(combined_omni_sessions, experiment_path / "omni_sessions.json")
+                    print(f"   ✓ Combined {len(combined_omni_sessions)} omni sessions")
+            except Exception as e:
+                print(f"   ⚠ Error combining omni sessions: {e}")
+
+        print()
+
+
 def run_purple_analysis():
-    """Launch Purple analysis tool."""
+    """Launch Purple analysis tools with sub-menu."""
     print("\n" + "=" * 60)
     print(" " * 15 + "PURPLE ANALYSIS")
     print("=" * 60 + "\n")
 
-    purple_script = Path(__file__).parent / "Purple_Revisited" / "run_analysis.py"
+    print("Purple Analysis provides multiple tools for analyzing your data:\n")
+    print("  • HP Comparison: Compare session lengths across experiments")
+    print("  • Meta Analysis: Analyze MITRE tactics, deceptiveness, patterns")
+    print("  • Advanced Visualizations: Create custom plots and charts\n")
 
-    if not purple_script.exists():
-        print(f"❌ Purple analysis script not found at: {purple_script}\n")
+    # Check if sessions exist
+    logs_path = Path(__file__).parent / "logs"
+    if not check_sessions_exist(logs_path):
+        print("⚠ No processed session data found.\n")
+        print("Please run 'Prepare Experiment Data' first to extract")
+        print("sessions from your experiment logs.\n")
+
+        should_prepare = questionary.confirm(
+            "Go to Prepare Experiment Data now?",
+            default=True
+        ).ask()
+
+        if should_prepare:
+            prepare_experiment_data()
+        return
+
+    # Show Purple analysis sub-menu
+    while True:
+        choice = show_purple_menu()
+
+        if choice == "HP Comparison Analysis":
+            run_hp_comparison()
+        elif choice == "Meta Analysis":
+            run_meta_analysis()
+        elif choice == "Advanced Visualizations":
+            run_advanced_viz()
+        elif choice == "Run All Analyses":
+            run_all_purple_analyses()
+        elif choice == "Back to Main Menu":
+            break
+
+
+def show_purple_menu():
+    """Display Purple analysis sub-menu."""
+    return questionary.select(
+        "Select analysis to run:",
+        choices=[
+            "HP Comparison Analysis",
+            "Meta Analysis",
+            "Advanced Visualizations",
+            "Run All Analyses",
+            "Back to Main Menu"
+        ],
+        style=questionary.Style([
+            ('question', 'bold'),
+            ('pointer', 'fg:cyan bold'),
+            ('highlighted', 'fg:cyan bold'),
+        ])
+    ).ask()
+
+
+def check_sessions_exist(logs_path: Path):
+    """Check if any sessions.json files exist."""
+    if not logs_path.exists():
+        return False
+
+    for exp_dir in logs_path.iterdir():
+        if not exp_dir.is_dir():
+            continue
+
+        sessions_file = exp_dir / "sessions.json"
+        omni_file = exp_dir / "omni_sessions.json"
+
+        if sessions_file.exists() or omni_file.exists():
+            return True
+
+    return False
+
+
+def run_hp_comparison():
+    """Run HP comparison analysis."""
+    print("\n" + "-" * 60)
+    print("HP COMPARISON ANALYSIS")
+    print("-" * 60 + "\n")
+
+    hp_script = Path(__file__).parent / "Purple" / "Data_analysis" / "hp_comparison_cli.py"
+
+    if not hp_script.exists():
+        print(f"❌ HP comparison script not found at: {hp_script}\n")
         return
 
     try:
-        subprocess.run([sys.executable, str(purple_script)])
+        subprocess.run([sys.executable, str(hp_script)])
     except Exception as e:
-        print(f"\n❌ Error running Purple analysis: {e}\n")
+        print(f"\n❌ Error running HP comparison: {e}\n")
 
-    print("\n")
+    print()
+
+
+def run_meta_analysis():
+    """Run meta analysis."""
+    print("\n" + "-" * 60)
+    print("META ANALYSIS")
+    print("-" * 60 + "\n")
+
+    meta_script = Path(__file__).parent / "Purple" / "Data_analysis" / "meta_analysis_cli.py"
+
+    if not meta_script.exists():
+        print(f"❌ Meta analysis script not found at: {meta_script}\n")
+        return
+
+    try:
+        subprocess.run([sys.executable, str(meta_script)])
+    except Exception as e:
+        print(f"\n❌ Error running meta analysis: {e}\n")
+
+    print()
+
+
+def run_advanced_viz():
+    """Run advanced visualization tool."""
+    print("\n" + "-" * 60)
+    print("ADVANCED VISUALIZATIONS")
+    print("-" * 60 + "\n")
+
+    viz_script = Path(__file__).parent / "Purple" / "Data_analysis" / "run_analysis.py"
+
+    if not viz_script.exists():
+        print(f"❌ Visualization script not found at: {viz_script}\n")
+        return
+
+    try:
+        subprocess.run([sys.executable, str(viz_script)])
+    except Exception as e:
+        print(f"\n❌ Error running visualizations: {e}\n")
+
+    print()
+
+
+def run_all_purple_analyses():
+    """Run all Purple analyses in sequence."""
+    print("\n" + "=" * 60)
+    print("RUNNING ALL PURPLE ANALYSES")
+    print("=" * 60 + "\n")
+
+    proceed = questionary.confirm(
+        "This will run HP Comparison, Meta Analysis, and Visualizations in sequence. Continue?",
+        default=True
+    ).ask()
+
+    if not proceed:
+        print("\nCancelled.\n")
+        return
+
+    print("\n[1/3] Running HP Comparison...")
+    run_hp_comparison()
+
+    print("\n[2/3] Running Meta Analysis...")
+    run_meta_analysis()
+
+    print("\n[3/3] Running Advanced Visualizations...")
+    run_advanced_viz()
+
+    print("\n" + "=" * 60)
+    print("✓ ALL ANALYSES COMPLETE")
+    print("=" * 60 + "\n")
 
 
 # Helper functions

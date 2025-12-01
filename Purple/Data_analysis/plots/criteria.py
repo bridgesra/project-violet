@@ -169,8 +169,13 @@ def plot_criteria(
                     lower = config_mus - config_margins
                     upper = config_mus + config_margins
                     values = np.arange(len(config_mus))
-                    plt.fill_between(values, lower, upper, alpha=0.2, color=colors.scheme[j])
-                    plt.plot(values, config_mus, color=colors.scheme[j], label=f"{exp_name} config {j}")
+                    color_idx = j % len(colors.scheme)  # Use modulo to cycle through colors
+                    plt.fill_between(values, lower, upper, alpha=0.2, color=colors.scheme[color_idx])
+                    # Use just config number for per-config plots (plots 3 & 4)
+                    if 'per config' in ylabel:
+                        plt.plot(values, config_mus, color=colors.scheme[color_idx], label=f"Config {j+1}")
+                    else:
+                        plt.plot(values, config_mus, color=colors.scheme[color_idx], label=f"{exp_name} config {j}")
                     prev_index = index
             plt.xlabel("Session")
             plt.ylabel(ylabel)
@@ -182,6 +187,7 @@ def plot_criteria(
 
         if subplot:
             plt.tight_layout()
-            plt.figlegend()
+            # Place legend outside the plot area to avoid covering data
+            plt.figlegend(loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=3, fontsize=9)
         else:
-            plt.legend()
+            plt.legend(loc='best', fontsize=9)

@@ -15,17 +15,69 @@ Project Violet is an automated cybersecurity research platform that simulates re
 OPENAI_API_KEY="{your-openai-api-key}"
 TOGETHER_AI_SECRET_KEY="{your-togetherai_api_key}"
 ```
-## Running the code easy
+## Quick Start
 
-All experiment settings will be set in config.py prior to running.
+Project Violet provides an interactive menu system for easy operation:
 
-Then simply run the experiment with
+```bash
+python main_menu.py
+```
+
+The interactive menu guides you through the complete workflow:
+
+### 1️⃣ **Start New Experiment**
+Configure and run attack simulations with customizable parameters:
+- Select AI models for attacker, honeypot, and reconfigurator
+- Choose reconfiguration methods (NO_RECONFIG, BASIC, ENTROPY, T_TEST)
+- Set session parameters and additional options
+- Configuration is automatically written to [config.py](config.py)
+
+### 2️⃣ **Prepare Experiment Data**
+Extract and process raw experiment logs for analysis:
+- **Extraction Modes:**
+  - `sessions.json`: Commands that reached the honeypot
+  - `omni_sessions.json`: All attacker commands including reconnaissance
+- Automatically combines sessions across honeypot configurations
+- Creates analysis-ready datasets
+
+### 3️⃣ **Run Purple Analysis**
+Comprehensive analysis suite with multiple tools:
+- **HP Comparison**: Compare session lengths and statistics across experiments
+- **Meta Analysis**: Analyze MITRE tactics, honeypot deceptiveness, and attack patterns
+- **Advanced Visualizations**: Generate custom plots and charts
+- **Run All**: Execute all analyses in sequence
+
+### Alternative: Direct Execution
+
+For advanced users, you can also run experiments directly:
 
 ```bash
 python main.py
 ```
 
-The [main.py](main.py) file orchestrates the entire attack simulation cycle, running multiple configurations and collecting comprehensive attack data.
+The [main.py](main.py) file orchestrates the entire attack simulation cycle using settings from [config.py](config.py).
+
+## Interactive Menu Features
+
+The [main_menu.py](main_menu.py) provides a user-friendly interface with the following features:
+
+### Experiment Configuration
+- **Interactive Model Selection**: Choose from GPT-4.1, GPT-4.1-Mini, O4-Mini, and GPT-4.1-Nano
+- **Reconfiguration Methods**: Select and configure NO_RECONFIG, BASIC, ENTROPY, or T_TEST strategies
+- **Visual Confirmation**: Review all settings before starting
+- **Automatic Config Updates**: Saves configuration to [config.py](config.py) automatically
+
+### Data Preparation
+- **Smart Extraction**: Choose between honeypot-only or comprehensive (omni) extraction modes
+- **Multi-Experiment Support**: Process multiple experiments simultaneously
+- **Progress Tracking**: Real-time status updates during extraction and combination
+- **Error Handling**: Graceful handling of missing or corrupt files
+
+### Analysis Suite
+- **Prerequisite Checking**: Validates that session data exists before analysis
+- **Guided Workflow**: Suggests data preparation if sessions are missing
+- **Batch Analysis**: Run all analyses in sequence with a single command
+- **Flexible Output**: Each analysis saves results to appropriate directories
 
 ## Configuration
 
@@ -71,15 +123,29 @@ The system generates organized output in the `logs/` directory:
 
 ```
 logs/
-├── [EXPERIMENT_NAME]/               # Experiment directories
-│   ├── metadata.json               # Experiment metadata
-│   ├── sessions.json               # All sessions summary
-│   └── hp_config_[N]/              # Individual honeypot configurations
-│       ├── honeypot_config.json    # Honeypot configuration used
-│       ├── sessions.json           # Sessions for this config
-│       ├── tokens_used.json        # Token usage tracking
-│       └── full_logs/              # Individual attack logs
-│           └── attack_[N].json     # Complete attack interaction logs
+├── [EXPERIMENT_NAME]/                  # Experiment directories
+│   ├── metadata.json                  # Experiment metadata
+│   ├── sessions.json                  # Combined sessions (honeypot commands)
+│   ├── omni_sessions.json             # Combined sessions (all commands)
+│   ├── meta_analysis/                 # Meta analysis outputs
+│   │   ├── tactic_distribution.csv
+│   │   ├── tactic_distribution_*.png
+│   │   └── honeypot_deceptiveness.csv
+│   ├── analysis_plots/                # Visualization outputs
+│   │   ├── session_length_*.png
+│   │   ├── mitre_distribution_*.png
+│   │   └── entropy_*.png
+│   └── hp_config_[N]/                 # Individual honeypot configurations
+│       ├── honeypot_config.json       # Honeypot configuration used
+│       ├── sessions.json              # Sessions for this config
+│       ├── omni_sessions.json         # Omni sessions for this config
+│       ├── tokens_used.json           # Token usage tracking
+│       └── full_logs/                 # Raw attack logs
+│           └── attack_[N].json        # Complete attack interaction logs
+├── hp_comparison/                     # Cross-experiment comparison
+│   ├── session_length_statistics.csv
+│   ├── session_length_comparison_boxplot.png
+│   └── session_length_mean_comparison.png
 ```
 
 
@@ -105,6 +171,80 @@ The codebase is organized into four main components:
 
 ### 💜 Purple
 
-* **Data Analysis**: Analysis tools to analyze logs.
+* **HP Comparison** ([hp_comparison_cli.py](Purple/Data_analysis/hp_comparison_cli.py)): Compare session lengths, statistics, and performance across multiple experiments
+* **Meta Analysis** ([meta_analysis_cli.py](Purple/Data_analysis/meta_analysis_cli.py)): Analyze MITRE tactic distributions, honeypot deceptiveness, and unique attack patterns
+* **Advanced Visualizations** ([run_analysis.py](Purple/Data_analysis/run_analysis.py)): Interactive plotting system for session lengths, entropy, reconfiguration criteria, and MITRE distributions
+
+### 🛠️ Utils & Scripts
+
+* **Session Extraction** ([Sangria/extraction.py](Sangria/extraction.py)): Extract structured session data from raw logs
+* **Data Utilities** ([Utils/](Utils/)): JSON handling, logging, and metadata management
+* **Automation Scripts** ([Scripts/](Scripts/)): Batch processing tools for data extraction and combination
+
+## Workflow
+
+```
+┌─────────────────────────────────────┐
+│   1. Start New Experiment           │
+│   Configure & run simulations       │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   Raw Logs Generated                │
+│   logs/EXPERIMENT/hp_config_N/      │
+│   full_logs/attack_*.json           │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   2. Prepare Experiment Data        │
+│   Extract sessions from logs        │
+│   sessions.json / omni_sessions.json│
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│   3. Run Purple Analysis            │
+│   • HP Comparison                   │
+│   • Meta Analysis                   │
+│   • Advanced Visualizations         │
+└─────────────────────────────────────┘
+```
+
+## Example Usage
+
+### Running a Complete Workflow
+
+1. **Start the interactive menu:**
+   ```bash
+   python main_menu.py
+   ```
+
+2. **Configure and run an experiment:**
+   - Select "Start New Experiment"
+   - Choose models (e.g., GPT-4.1-Mini for all components)
+   - Select reconfiguration method (e.g., T_TEST)
+   - Set 400 sessions with max length of 100 turns
+   - Confirm and run
+
+3. **Prepare the data:**
+   - Return to main menu after experiment completes
+   - Select "Prepare Experiment Data"
+   - Choose extraction mode (honeypot-only or omni)
+   - Select your experiment from the list
+   - Confirm and process
+
+4. **Analyze results:**
+   - Select "Run Purple Analysis"
+   - Choose "Run All Analyses" to generate all reports
+   - Or select individual analyses as needed
+
+### Output Examples
+
+After running all analyses, you'll find:
+- **HP Comparison**: `logs/hp_comparison/session_length_comparison_boxplot.png`
+- **Meta Analysis**: `logs/EXPERIMENT_NAME/meta_analysis/tactic_distribution.csv`
+- **Visualizations**: `logs/EXPERIMENT_NAME/analysis_plots/session_length_*.png`
 
 

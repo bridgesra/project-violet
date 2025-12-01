@@ -12,4 +12,12 @@ orange = "#FE6100"
 seafoam = "#65B9AE"
 magenta = "#D051A2"
 
-scheme = [blue, red, purple, yellow, orange, seafoam, magenta]
+# Extended colors for more configurations
+teal = "#008080"
+coral = "#FF6B6B"
+lime = "#7CB342"
+pink = "#E91E63"
+cyan = "#00BCD4"
+amber = "#FFC107"
+
+scheme = [blue, red, purple, yellow, orange, seafoam, magenta, teal, coral, lime, pink, cyan, amber]
