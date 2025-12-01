@@ -24,16 +24,25 @@ def cosine_similarity(a, b):
 def clean_and_finalize_config(config):
     """
     Clean up and finalize the generated config: remove schema/title, assign a new UUID, timestamp, and fix service fields.
+    Updates plugin llmModel and llmProvider to match config.py settings.
     """
+    # Import config values
+    from config import llm_model_blue_lagoon, llm_provider_hp
+
     config.pop("$schema", None)
     config.pop("title", None)
     config["id"] = str(uuid.uuid4())
     config["timestamp"] = datetime.now(timezone.utc).isoformat()
+
     for service in config.get("services", []):
         service.pop("id", None)
         if service.get("protocol") in ["http", "ssh"]:
             if "plugin" not in service:
                 service["plugin"] = None
+            elif service["plugin"] is not None:
+                # Update llmModel and llmProvider to match config.py
+                service["plugin"]["llmModel"] = llm_model_blue_lagoon.value
+                service["plugin"]["llmProvider"] = llm_provider_hp
         else:
             service.pop("plugin", None)
     return config
@@ -71,4 +80,3 @@ def release_config_lock(lock_file):
         fcntl.lockf(lock_file.fileno(), fcntl.LOCK_UN)
         print("lock released")
     lock_file.close()
-

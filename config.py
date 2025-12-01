@@ -1,17 +1,20 @@
 from Sangria.model import LLMModel, ReconfigCriteria
 
-experiment_name = ""
-run_id = "16" # 10 - 99, If multiple experiments are run in parallel, each need unique run_id.
+experiment_name = "t"
+run_id = "10" # 10 - 99, If multiple experiments are run in parallel, each need unique run_id.
 
 # Experiment settings
 llm_model_sangria = LLMModel.GPT_4_1_MINI
 llm_model_blue_lagoon = LLMModel.GPT_4_1_MINI
 llm_model_reconfig = LLMModel.GPT_4_1_MINI
 llm_provider_hp = "openai" # openai / togetherai / static
-reconfig_method: ReconfigCriteria = ReconfigCriteria.NO_RECONFIG # NO_RECONFIG / BASIC / ENTROPY / T_TEST 
+reconfig_method: ReconfigCriteria = ReconfigCriteria.BASIC # NO_RECONFIG / BASIC / ENTROPY / T_TEST 
 
 # Simulate HP for testing purposes
 simulate_command_line = False
+
+# Attacker configuration
+provide_honeypot_credentials = True  # Provide target credentials to attacker to skip reconnaissance
 
 # Session settings
 num_of_sessions = 2

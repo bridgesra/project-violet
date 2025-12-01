@@ -122,13 +122,11 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
             fn_name = tool_use.function.name
             fn_args = json.loads(tool_use.function.arguments)
 
-            terminal_input_tools = list(filter(lambda x: x['role'] == 'tool' and x['name'] == 'terminal_input', messages))
+            # Get honeypot logs BEFORE creating tool_response
+            beelzebub_logs = []
             if not config.simulate_command_line:
                 beelzebub_logs = log_extractor.get_new_hp_logs()
-                if terminal_input_tools:
-                    last_terminal_input_tool = terminal_input_tools[-1]
-                    last_terminal_input_tool["honeypot_logs"] = beelzebub_logs
-                
+
             result= handle_tool_call(fn_name, fn_args, ssh)
 
             tool_response = {
@@ -136,8 +134,12 @@ def run_single_attack(messages, max_session_length, full_logs_path, attack_count
                 "name": fn_name,
                 "tool_call_id": tool_use.id,
                 "content": str(result['content'])
-
             }
+
+            # Add honeypot_logs to terminal_input tools
+            if fn_name == "terminal_input" and not config.simulate_command_line:
+                tool_response["honeypot_logs"] = beelzebub_logs
+
             messages.append(tool_response)
             append_json_to_file(tool_response, full_logs_path, False)
 

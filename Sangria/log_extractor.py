@@ -11,7 +11,7 @@ def get_new_hp_logs():
     """
     global last_checked
     process = subprocess.Popen(
-        ["sudo", "docker", "logs", f"{os.getenv('RUNID')}_blue_lagoon_1", "--since", last_checked],
+        ["docker", "logs", f"{os.getenv('RUNID')}-blue_lagoon-1", "--since", last_checked],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -21,12 +21,22 @@ def get_new_hp_logs():
 
     log_output = process.stdout.read().strip()
     if log_output:
-        try:
-            log_lines = log_output.strip().split('\n')
-            logs = [json.loads(line) for line in log_lines if line.strip()]
-            return logs  # Return parsed JSON objects instead of string
-        except json.JSONDecodeError:
-            # If parsing fails, return raw logs as fallback
-            return {"raw_logs": log_output, "error": "Failed to parse JSON"}
+        logs = []
+        log_lines = log_output.strip().split('\n')
 
-    return [] 
+        for line in log_lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            try:
+                # Try to parse line as JSON
+                parsed = json.loads(line)
+                logs.append(parsed)
+            except json.JSONDecodeError:
+                # Skip non-JSON lines (ASCII art, banners, etc.)
+                continue
+
+        return logs  # Always returns a list
+
+    return []  # Always returns a list 

@@ -203,7 +203,7 @@ def build_config_prompt(schema_path, top_vulns, prev_config=None):
         "   - Provide a meaningful `cve_description` and valid `cve_tags`.\n"
         "   - Fully follow the JSON schema provided below.\n"
         "   - Include the `plugin` field explicitly: set it to `null` if not using an LLM.\n"
-        "3. All **services** should use an LLM plugin (gpt-4o-mini, OpenAI).\n"
+        "3. All **services** should use an LLM plugin.\n"
         "4. Make each service’s behavior **distinct** — e.g., vary the port, interaction style, or vulnerability.\n\n"
         "Return ONLY a complete JSON object that matches the schema structure.\n"
         "DO NOT include markdown or explanations.\n"

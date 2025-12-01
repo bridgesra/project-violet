@@ -10,9 +10,11 @@ TIMEOUT = 40
 openai.api_key = os.getenv('OPENAI_API_KEY')
 openai_client = openai.OpenAI()
 
-prompt_patterns = [pexpect.EOF, 
+prompt_patterns = [pexpect.EOF,
                     r'└─\x1b\[1;31m#',
-                    r' \x1b\[0m> ', 
+                    r' \x1b\[0m> ',
+                    r'root@[a-zA-Z0-9_-]+:~[\$#] ',  # Honeypot prompt (root@ubuntu:~$ or root@hostname:~#)
+                    r'[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+:~[\$#] ',  # Generic user@hostname prompt
                     r'Are you sure you want to continue connecting \(yes/no/\[fingerprint\]\)\? ',
                     's password: ',
                     'Enter password: ',

@@ -2,7 +2,8 @@ from dotenv import load_dotenv
 import os
 import config
 load_dotenv()
-os.environ["HP_MODEL"] = config.llm_model_blue_lagoon
+os.environ["HP_MODEL"] = config.llm_model_blue_lagoon.value
+os.environ["HP_MODEL_PROVIDER"] = config.llm_provider_hp
 os.environ["RUNID"] = config.run_id
 
 from pathlib import Path
@@ -12,7 +13,7 @@ from Sangria.sangria import run_single_attack
 from Sangria.extraction import extract_session
 
 from Reconfigurator.new_config_pipeline import generate_new_honeypot_config, get_honeypot_config, set_honeypot_config
-from Reconfigurator.utils import acquire_config_lock, release_config_lock
+from Reconfigurator.utils import acquire_config_lock, release_config_lock, clean_and_finalize_config
 
 from Blue_Lagoon.honeypot_tools import start_dockers, stop_dockers
 
@@ -25,12 +26,14 @@ def main():
     base_path = Path(base_path)
 
     honeypot_config = get_honeypot_config(id=config.llm_provider_hp, path="")
+    honeypot_config = clean_and_finalize_config(honeypot_config)
 
     lock_file = acquire_config_lock()
     set_honeypot_config(honeypot_config)
 
     config_counter = 1
     config_attack_counter = 0
+    total_attack_counter = 0
     tokens_used_list = []
 
     BOLD   = "\033[1m"
@@ -51,15 +54,16 @@ def main():
     if not config.simulate_command_line:
         save_json_to_file(honeypot_config, config_path / f"honeypot_config.json")
 
-    for _ in range(config.num_of_sessions):
+    for i in range(config.num_of_sessions):
         config_attack_counter += 1
+        total_attack_counter += 1
         os.makedirs(config_path, exist_ok=True)
         print(f"{BOLD}Attack {config_attack_counter} / {config.num_of_sessions}, configuration {config_counter}{RESET}")
 
         logs_path = full_logs_path / f"attack_{config_attack_counter}.json"
 
         messages = [
-            {'role': 'system', 'content': attacker_prompt.prompt},
+            {'role': 'system', 'content': attacker_prompt.get_prompt(honeypot_config)},
             {"role": "user", "content": "What is your next move?"}
         ]
 
@@ -73,7 +77,7 @@ def main():
         tokens_used_list.append(tokens_used)
         append_json_to_file(session, config_path / f"sessions.json", False)
 
-        if reconfigurator.should_reconfigure():  
+        if reconfigurator.should_reconfigure() and total_attack_counter < config.num_of_sessions:
             print(f"{BOLD}Reconfiguring: Using {config.reconfig_method}.{RESET}")
 
             if not config.simulate_command_line:

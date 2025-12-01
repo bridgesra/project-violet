@@ -8,14 +8,54 @@ hp_model = os.environ.get("HP_MODEL")
 
 def start_dockers():
     print("Starting Docker containers...")
-    subprocess.run(["sudo", f"RUNID={runid}", f"OPENAI_API_KEY={openai_key}", f"TOGETHER_AI_SECRET_KEY={together_key}", f"HP_MODEL={hp_model}", "docker-compose","-f", f"docker-compose.yml", "-p", os.environ.get("RUNID"), "build"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(["sudo", f"RUNID={runid}", f"OPENAI_API_KEY={openai_key}", f"TOGETHER_AI_SECRET_KEY={together_key}", f"HP_MODEL={hp_model}", "docker-compose", "-f", f"docker-compose.yml", "-p", os.environ.get("RUNID"), "up", "-d"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # Create environment with all variables
+    env = os.environ.copy()
+    env.update({
+        "RUNID": runid,
+        "OPENAI_API_KEY": openai_key, 
+        "TOGETHER_AI_SECRET_KEY": together_key,
+        "HP_MODEL": hp_model
+    })
+    
+    subprocess.run(
+        ["docker", "compose", "-f", "docker-compose.yml", "-p", runid, "build"],
+        check=True,
+        env=env
+    )
+    subprocess.run(
+        ["docker", "compose", "-f", "docker-compose.yml", "-p", runid, "up", "-d"],
+        check=True,
+        env=env
+    )
     print("Docker containers started")
-
 
 def stop_dockers():
     print("Stopping Docker containers...")
-    subprocess.run(["sudo", f"RUNID={runid}", f"OPENAI_API_KEY={openai_key}", f"TOGETHER_AI_SECRET_KEY={together_key}", f"HP_MODEL={hp_model}", "docker-compose", "-f", f"docker-compose.yml", "-p", os.environ.get("RUNID"),"down"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    env = os.environ.copy()
+    env.update({
+        "RUNID": runid,
+        "OPENAI_API_KEY": openai_key,
+        "TOGETHER_AI_SECRET_KEY": together_key, 
+        "HP_MODEL": hp_model
+    })
+    
+    subprocess.run(
+        ["docker", "compose", "-f", "docker-compose.yml", "-p", runid, "down"],
+        check=True,
+        env=env
+    )
     print("Docker containers stopped")
-    subprocess.run(["sudo", "docker", "image", "prune", "-f"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    subprocess.run(
+        ["docker", "image", "prune", "-f"], 
+        check=True, 
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL
+    )
 
+# If you need to call these functions directly
+if __name__ == "__main__":
+    start_dockers()
+    # or stop_dockers()
