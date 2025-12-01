@@ -1,23 +1,21 @@
 # %%
 import os
 import sys
-import questionary
 import numpy as np
 from pathlib import Path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(project_root)
 
 from Purple.Data_analysis.plots.heatmaps import plot_heatmaps
 from Purple.Data_analysis.plots.session_length import plot_session_length
+from Purple.Data_analysis.utils import extract_experiment, compute_confidence_interval
 # Add parent directory to sys.path to allow imports from project root
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(project_root)
 import ipywidgets as widgets
 from IPython.display import display
 from Purple.Data_analysis import colors
 import json
-import pprint
 import matplotlib.pyplot as plt
 from Purple.RagData.retrive_techniques import retrieve_unique_techniques
-from Purple.Data_analysis.utils import extract_experiment, compute_confidence_interval
 import editdistance
 
 logs_path = Path(__file__).resolve().parent.parent.parent / "logs"
@@ -56,18 +54,22 @@ if not selected_experiments:
     sys.exit(0)
 
 paths = [logs_path / exp for exp in selected_experiments]
-print(paths)
 
 sessions_list_list = []
 combined_sessions_list = []
 reconfig_indices_list = []
+total_sessions = 0
+labeled_commands = 0
 for path in paths:
     combined_sessions, sessions_list, reconfig_indices = extract_experiment(path, filter_empty_sessions)
     sessions_list_list.append(sessions_list)
     combined_sessions_list.append(combined_sessions)
     reconfig_indices_list.append(reconfig_indices)
 
-print(json.dumps(sessions_list_list, indent=2))
+    total_sessions += len(combined_sessions)
+    labeled_commands += sum(len(session.get("full_session", [])) for session in combined_sessions)
+print("total sessions:", total_sessions)
+print("labeled commands:", labeled_commands)
 
 # %% Tactic distribution
 from Purple.Data_analysis.metrics import measure_tactic_sequences, measure_technique_sequences, measure_command_sequences
@@ -94,22 +96,9 @@ for i, sessions in enumerate(combined_sessions_list):
 
 # Sort by count in descending order
 full_tactic_distributions = dict(sorted(full_tactic_distributions.items(), key=lambda x: x[1], reverse=True))
-print(full_tactic_distributions)
-print(tactic_distributions)
-print(session_lengths)
-
-# %% Plot tactic distribution
-plt.figure(figsize=(10, 6))
-plt.bar(full_tactic_distributions.keys(), full_tactic_distributions.values(), color=colors.blue)
-plt.xlabel("Tactic")
-plt.ylabel("Count")
-plt.title("Tactic Distribution Across All Experiments")
-plt.xticks(rotation=45, ha='right')
-plt.tight_layout()
-plt.show()
 
 # %% plot tactic distribution for all experiments with different colors in a single plot
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(10, 5))
 
 # Get all unique tactics across all experiments and sort by total count (descending)
 all_tactics = sorted(full_tactic_distributions.keys(), key=lambda x: full_tactic_distributions[x], reverse=True)
@@ -120,24 +109,54 @@ x_positions = np.arange(len(all_tactics))
 # Initialize bottom array for stacking
 bottom = np.zeros(len(all_tactics))
 
+# Keep track of labels we've already added to legend
+added_labels = set()
+
 for i, tactic_distribution in enumerate(tactic_distributions):
     # Get counts for each tactic (0 if not present)
     counts = [tactic_distribution.get(tactic, 0) for tactic in all_tactics]
     
     # Plot stacked bars
+    label = ""
+    color = colors.scheme[i % len(colors.scheme)]
+    if selected_experiments[i].startswith("EXPERIMENT_ATTACKER_"):
+        label = "Attacker Experiments"
+        color = colors.scheme[1]
+    elif selected_experiments[i].startswith("EXPERIMENT_HP_"):
+        label = "Honeypot Experiments"
+        color = colors.scheme[0]
+    elif selected_experiments[i].startswith("RECONFIG_EXPERIMENT_"):
+        label = "Reconfiguration Experiment"
+        color = colors.scheme[5]
+    else:
+        label = f'Experiment {selected_experiments[i]}'
+    
+    # Only include label if we haven't seen it before
+    legend_label = label if label not in added_labels else ""
+    if label not in added_labels:
+        added_labels.add(label)
+    
     plt.bar(x_positions, counts, 
             bottom=bottom,
-            label=f'Experiment {selected_experiments[i]}',
-            color=colors.scheme[i % len(colors.scheme)],)
+            label=legend_label,
+            color=color)
     
     # Update bottom for next stack
     bottom += counts
 
-plt.xlabel("Tactic")
-plt.ylabel("Count")
-plt.title("Tactic Distribution Across All Experiments (Stacked)")
+# Add percentage labels on top of each stack
+total_counts = bottom
+for i, (tactic, total_count) in enumerate(zip(all_tactics, total_counts)):
+    if total_count > 0:  # Only show percentage if there's data
+        percentage = (total_count / sum(total_counts)) * 100
+        plt.text(i, total_count + max(total_counts) * 0, f'{percentage:.1f}%', 
+                ha='center', va='bottom', fontsize=12, rotation=0)
+
+plt.ylabel("Number of Sessions")
+plt.ylim(0, 39000)
+# plt.yscale('log')  # Use logarithmic scale for better visibility
 plt.xticks(x_positions, all_tactics, rotation=45, ha='right')
-plt.legend()
+plt.legend(loc='upper right', bbox_to_anchor=(0.98, 0.98), fontsize=12)
 plt.tight_layout()
 plt.show()
 
@@ -166,6 +185,34 @@ print(tactic_distribution_df)
 
 tactic_distribution_df.to_csv(logs_path / "tactic_distribution.csv")
 
+# %% Create LaTeX table for tactic distribution
+# Create a dataframe with tactics as rows
+tactic_totals = pd.Series(full_tactic_distributions)
+tactic_total_sum = tactic_totals.sum()
+tactic_percentages = (tactic_totals / tactic_total_sum * 100).round(1)
+
+# Create dataframe with tactics as rows (not transposed)
+tactic_summary_df = pd.DataFrame({
+    'Total': tactic_totals,
+    'Percentage': tactic_percentages
+})
+
+latex_tactic_table = tactic_summary_df.to_latex(
+    float_format="%.1f",
+    column_format='lrr',
+    escape=False,
+    caption="Tactic Distribution Totals and Percentages",
+    label="tab:tactic_distribution",
+    position='H'
+)
+
+# Save LaTeX table to file
+with open(logs_path / "tactic_distribution.tex", 'w') as f:
+    f.write(latex_tactic_table)
+
+print("LaTeX table saved to tactic_distribution.tex")
+print(latex_tactic_table)
+
 # %% Honeypot deceptiveness
 # table of model of HP/experiment, detection, no detection, session length befor discovery and average session length
 hp_deceptiveness_data = []
@@ -174,12 +221,15 @@ for i, sessions_list in enumerate(combined_sessions_list):
     n_experiments = len(sessions_list)
 
     honeypot_detected = sum(1 for session in sessions_list if session.get("discovered_honeypot") == "yes")
-    honeypot_not_detected = n_experiments - honeypot_detected
+    honeypot_not_detected = sum(1 for session in sessions_list if session.get("discovered_honeypot") == "no")
+    print((honeypot_detected), (honeypot_not_detected), len(sessions_list))
 
     detected_percentage = honeypot_detected / n_experiments * 100
     not_detected_percentage = honeypot_not_detected / n_experiments * 100
 
-    session_length_data = measure_session_length(sessions_list)
+    # Only include sessions where discovered_honeypot is not "unknown"
+    filtered_sessions = [session for session in sessions_list if session.get("discovered_honeypot") != "unknown"]
+    session_length_data = measure_session_length(filtered_sessions)
     average_session_length = session_length_data["mean"]
 
     sessions_before_discovery = [session for session in sessions_list if session.get("discovered_honeypot") == "yes"]
@@ -209,16 +259,48 @@ for i, sessions_list in enumerate(combined_sessions_list):
 hp_deceptiveness_df = pd.DataFrame(hp_deceptiveness_data)
 
 hp_deceptiveness_df = hp_deceptiveness_df.round(2)
-print(hp_deceptiveness_df)        
+
+# Rename columns to be shorter and add % symbols where appropriate
+hp_deceptiveness_df_latex = hp_deceptiveness_df.copy()
+hp_deceptiveness_df_latex = hp_deceptiveness_df_latex.rename(columns={
+    "Honeypot Model": "Model",
+    "Detection Percentage": "Detected \\%",
+    "No Detection Percentage": "Not Detected \\%", 
+    "Average Session Length": "Avg Length",
+    "Average Session Length Before Discovery": "Before Discovery",
+    "Average Session Length Without Discovery": "Without Discovery"
+})
+
+# Drop the redundant 'Experiment' column and format the data
+hp_deceptiveness_df_latex = hp_deceptiveness_df_latex.drop(columns=['Experiment'])
+
+# Convert to CSV
+hp_deceptiveness_df.to_csv(logs_path / "honeypot_deceptiveness.csv", index=False)
+
+# Generate LaTeX table with custom formatting
+latex_table = hp_deceptiveness_df_latex.to_latex(
+    index=False, 
+    float_format="%.1f",
+    column_format='lrr|rrr',
+    escape=False,
+    caption="The table shows different honeypot models effectiveness in not being detected and their average session lengths.",
+    label="tab:tab:hp-deceptiveness",
+    position='H'
+)
+
+# Save LaTeX table to file
+with open(logs_path / "honeypot_deceptiveness.tex", 'w') as f:
+    f.write(latex_table)
+
+print("LaTeX table saved to honeypot_deceptiveness.tex")
+print(latex_table)
 
 # %% Average session length over time (restart each configuration)
 for k, sessions_list in enumerate(sessions_list_list):
     length_data = measure_session_length(combined_sessions_list[k])
-    print(length_data)
 
     session_all_lengths = []    
     for session in sessions_list:
-        print(len(session))
         if len(session) == 0:
             continue
         session_length_data = measure_session_length(session)
@@ -232,10 +314,15 @@ for k, sessions_list in enumerate(sessions_list_list):
         eps = []
 
         for i in range(len(session_lengths)):
-            moe = compute_confidence_interval(session_lengths[0:i], 0.05)
-            margins.append(moe)
-            mus.append(np.mean(session_lengths[0:i]))
-            eps.append(0.4 * np.std(session_lengths[0:i], ddof=1))
+            if i < 2:  # Skip when we have less than 2 data points
+                margins.append(0)
+                mus.append(session_lengths[0] if i > 0 else 0)
+                eps.append(0)
+            else:
+                moe = compute_confidence_interval(session_lengths[0:i], 0.05)
+                margins.append(moe)
+                mus.append(np.mean(session_lengths[0:i]))
+                eps.append(0.4 * np.std(session_lengths[0:i], ddof=1))
 
         mus = np.array(mus)
         margins = np.array(margins)
@@ -245,15 +332,16 @@ for k, sessions_list in enumerate(sessions_list_list):
         mask = (margins <= eps)
         values = np.array(range(len(mus)))
 
-        plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}, Config {j+1}", alpha=0.7)
-        plt.scatter(values[mask], mus[mask], color=colors.scheme[k], alpha=0.7)
+        plt.plot(values, mus, color=colors.scheme[k % len(colors.scheme)], label=f"{selected_experiments[k]}, Config {j+1}", alpha=0.7)
+        plt.fill_between(values, mus - margins, mus + margins, color=colors.scheme[k % len(colors.scheme)], alpha=0.1)
+        print(f"{selected_experiments[k]}, Config {j+1}: {mus[-1]:.2f} ± {margins[-1]:.2f}")
 
 plt.ylim(-5, 100)
-plt.legend()
-plt.xlabel("Sequence")
-plt.ylabel("Mean")
+plt.xlim(0, 80)
+plt.xlabel("Session Index")
+plt.ylabel("Mean Session Length (number of commands)")
+plt.title("Average Session Length Over Time")
 plt.show()
-
 
 # %% Average Levenshtein distance over time (restart each configuration)
 for k, sessions_list in enumerate(sessions_list_list):
@@ -275,8 +363,11 @@ for k, sessions_list in enumerate(sessions_list_list):
                 seq_l = sequence_data["indexed_sequences"][l]
                 if seq_i and seq_l:
                     dist = editdistance.eval(seq_i, seq_l)
-                    current_dists.append(dist)
-                    dists_list.append(dist)
+                    # Normalize by the maximum possible distance (length of longer sequence)
+                    max_len = max(len(seq_i), len(seq_l))
+                    normalized_dist = dist / max_len if max_len > 0 else 0
+                    current_dists.append(normalized_dist)
+                    dists_list.append(normalized_dist)
             
             if dists_list:
                 eps.append(0.05 * np.std(dists_list, ddof=1) if len(dists_list) > 1 else 0)
@@ -292,40 +383,16 @@ for k, sessions_list in enumerate(sessions_list_list):
             mask = (margins <= eps_threshold) if len(margins) > window_size else np.ones(len(margins), dtype=bool)
             values = np.array(range(len(mus)))
 
-            plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}, Config {j+1}", alpha=0.7)
-            plt.plot(values[mask], mus[mask], color=colors.scheme[-1], alpha=0.7)
+            plt.plot(mus, color=colors.scheme[k % len(colors.scheme)], label=f"{selected_experiments[k]}, Config {j+1}", alpha=0.7)
+            plt.fill_between(values, mus - margins, mus + margins, color=colors.scheme[k % len(colors.scheme)], alpha=0.1)
+            print(f"{selected_experiments[k]}, Config {j+1}: {mus[-1]:.4f} ± {margins[-1]:.5f}")
 
-plt.legend()
-plt.xlabel("Sequence")
-plt.ylabel("Mean Levenshtein Distance")
-plt.title("Average Levenshtein Distance Over Time (Restart Each Configuration)")
-plt.show()
-
-# %% Set of sequences over time
-unique_session_list = []
-unique_session_list_list = []
-for i, comb_session in enumerate(combined_sessions_list):
-    unique_session = set()
-    _usll = []
-    for session in comb_session:
-        unique_session.add(session['tactics'])
-        _usll.append(len(unique_session))
-    unique_session_list.append(unique_session)
-    unique_session_list_list.append(_usll)
-print(unique_session_list)
-print([len(sessions) for sessions in combined_sessions_list if sessions])
-print([len(sessions) for sessions in unique_session_list])
-
-
-plt.figure(figsize=(12, 6))
-for usl in unique_session_list_list:
-    plt.plot(usl, marker='o', linestyle='-')
-    plt.legend([f"Experiment {i+1}" for i in range(len(unique_session_list_list))])
 plt.xlabel("Session Index")
-plt.ylabel("Number of Unique Sessions")
-plt.title("Number of Unique Sessions Over Time")
+plt.ylim(0, 1)
+plt.xlim(0, 80)
+plt.ylabel("Mean Levenshtein Distance")
+plt.title("Average Levenshtein Distance Over Time")
 plt.show()
-
 
 # %% Average Levenshtein distance over time (no restart)
 from collections import Counter
@@ -344,13 +411,16 @@ for k, combined_sessions in enumerate(combined_sessions_list):
     eps = []
 
     for i in range(len(sequence_data["indexed_sequences"])):
+        avg_list = []
         for j in range(0, i):
             seq_i = sequence_data["indexed_sequences"][i]
             seq_j = sequence_data["indexed_sequences"][j]
             if seq_i and seq_j:
-                dist = editdistance.eval(seq_i, seq_j)
+                dist = editdistance.eval(seq_i, seq_j) / max(len(seq_i), len(seq_j))
                 dists.update([dist])
-                dists_list.append(dist)
+                avg_list.append(dist)
+        my_avg = np.mean(np.array(avg_list)) if avg_list else 0
+        dists_list.append(my_avg)
         eps.append(0.1 * np.std(dists_list, ddof=1))
         moe = compute_confidence_interval(np.array(dists_list), 0.05)
         margins.append(moe)
@@ -362,18 +432,56 @@ for k, combined_sessions in enumerate(combined_sessions_list):
     mask = (margins < eps) & (np.array([False] * window_size + [True] * (len(mus) - window_size)))
     values = np.array(range(len(mus)))
 
-    plt.plot(values, mus, color=colors.scheme[k], label=f"Experiment {k+1}", alpha=0.7)
-    
+    plt.plot(values, mus, color=colors.scheme[k], label=f"{selected_experiments[k]}", alpha=0.7)
+    plt.fill_between(values, mus - margins, mus + margins, color=colors.scheme[k], alpha=0.1)
+
     # Add vertical bars for reconfig indices
     for reconfig_idx in reconfig_indices_list[k]:
         plt.axvline(x=reconfig_idx, color=colors.scheme[k], linestyle='--', alpha=0.5)
     
 plt.xlabel("Sequence")
 plt.ylabel("Mean Levenshtein Distance")
-plt.xlim([50, len(mus) - 1])
-plt.ylim([20, 40])
+plt.xlim([0, len(mus) - 1])
+plt.ylim([0, 1])
 plt.legend()
 plt.show()
 
+# %% Average session length over time (no restart)
+for k, combined_sessions in enumerate(combined_sessions_list):
+    session_length_data = measure_session_length(combined_sessions)
+
+    session_lengths = session_length_data["session_lengths"]
+    margins = []
+    mus = []
+    eps = []
+
+    for i in range(1, len(session_lengths) + 1):
+        current_lengths = session_lengths[:i]
+        eps.append(0.4 * np.std(current_lengths, ddof=1) if len(current_lengths) > 1 else 0)
+        moe = compute_confidence_interval(current_lengths, 0.05)
+        margins.append(moe)
+        mus.append(np.mean(current_lengths))
+
+    mus = np.array(mus)
+    margins = np.array(margins)
+    eps_threshold = eps[-1] if eps else 0
+    window_size = 10
+    mask = (margins < eps_threshold) & (np.array([False] * window_size + [True] * (len(mus) - window_size)))
+    values = np.array(range(len(mus)))
+
+    plt.plot(values, mus, color=colors.scheme[k], label=f"{selected_experiments[k]}", alpha=0.7)
+    plt.fill_between(values, mus - margins, mus + margins, color=colors.scheme[k], alpha=0.1)
+
+    # Add vertical bars for reconfig indices
+    for reconfig_idx in reconfig_indices_list[k]:
+        plt.axvline(x=reconfig_idx, color=colors.scheme[k], linestyle='--', alpha=0.5)
+
+plt.xlabel("Session Index")
+plt.ylabel("Mean Session Length (number of commands)")
+plt.xlim([0, len(mus) - 1])
+plt.ylim([0, 100])
+plt.legend()
+plt.title("Average Session Length Over Time (No Restart)")
+plt.show()
 # %% Tokens used per experiment
 
