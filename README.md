@@ -14,6 +14,7 @@ Project Violet is an automated cybersecurity research platform that simulates re
 ```
 OPENAI_API_KEY="{your-openai-api-key}"
 TOGETHER_AI_SECRET_KEY="{your-togetherai_api_key}"
+"TOKENIZERS_PARALLELISM=false"
 ```
 ## Quick Start
 
@@ -46,16 +47,6 @@ Comprehensive analysis suite with multiple tools:
 - **Meta Analysis**: Analyze MITRE tactics, honeypot deceptiveness, and attack patterns
 - **Advanced Visualizations**: Generate custom plots and charts
 - **Run All**: Execute all analyses in sequence
-
-### Alternative: Direct Execution
-
-For advanced users, you can also run experiments directly:
-
-```bash
-python main.py
-```
-
-The [main.py](main.py) file orchestrates the entire attack simulation cycle using settings from [config.py](config.py).
 
 ## Interactive Menu Features
 
@@ -246,5 +237,11 @@ After running all analyses, you'll find:
 - **HP Comparison**: `logs/hp_comparison/session_length_comparison_boxplot.png`
 - **Meta Analysis**: `logs/EXPERIMENT_NAME/meta_analysis/tactic_distribution.csv`
 - **Visualizations**: `logs/EXPERIMENT_NAME/analysis_plots/session_length_*.png`
+
+## Troubleshooting
+
+**Permission errors with Docker**
+- Add your user to the docker group: `sudo usermod -aG docker $USER`
+- Log out and back in for changes to take effect
 
 
