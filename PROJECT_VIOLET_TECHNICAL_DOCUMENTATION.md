@@ -113,7 +113,6 @@ Sangria is the autonomous red team component that conducts realistic penetration
 - [llm_tools.py](Sangria/llm_tools.py): Tool definitions and handlers
 - [attacker_prompt.py](Sangria/attacker_prompt.py): System prompt generation
 - [extraction.py](Sangria/extraction.py): Session data extraction
-- [buffer_metrics.py](Sangria/buffer_metrics.py): Performance monitoring
 
 ### Attack Loop Mechanism
 
@@ -164,28 +163,12 @@ def run_single_attack(messages, max_session_length, full_logs_path,
 
 #### 3. **SSH Command Execution** ([terminal_io.py:36-141](Sangria/terminal_io.py#L36-L141))
 
-**Critical Innovation: Buffer Management** (v2.3.1)
+**Command Execution Flow**:
+1. Send command via SSH
+2. Wait for terminal prompt pattern
+3. Capture response from buffer
 
-```python
-def send_terminal_command(connection, command):
-    # Version 2.3.1: Fixed desynchronization issue
-    # Key insight: Clear buffer AFTER capturing response, not BEFORE
-```
-
-**The Desynchronization Problem**:
-- Beelzebub LLM responses take 300-2000ms to generate
-- pexpect's `connection.before` buffer persists between commands
-- Original implementation cleared buffer before sending → captured wrong data
-- **Solution**: 500ms wait + clear buffer AFTER response capture
-
-**Timing Flow**:
-1. Send command via SSH (Line 72)
-2. Wait 500ms for Beelzebub LLM generation (Line 83)
-3. Wait for terminal prompt pattern (Line 86)
-4. Capture response from buffer (Line 107)
-5. **Clear buffer for next iteration** (Lines 119-121)
-
-**Prompt Patterns** (Lines 15-26): Multiple terminal prompt formats recognized to handle various system responses.
+**Prompt Patterns**: Multiple terminal prompt formats recognized to handle various system responses.
 
 ### Tool System
 
@@ -245,12 +228,6 @@ total_tokens_used = {
     "cached_tokens": total_cached_tokens  # OpenAI prompt caching
 }
 ```
-
-**Buffer Metrics** ([buffer_metrics.py](Sangria/buffer_metrics.py)):
-- Commands executed
-- Buffer clearing events
-- Response timing analysis
-- Saved per attack session
 
 ---
 
@@ -843,7 +820,6 @@ logs/
     │   ├── sessions.json                 # Extracted sessions for this config
     │   ├── omni_sessions.json            # Omni sessions for this config
     │   ├── tokens_used.json              # Token usage per session
-    │   ├── buffer_metrics.json           # Buffer clearing statistics
     │   └── full_logs/
     │       ├── attack_1.json             # Complete conversation log
     │       ├── attack_2.json
@@ -889,33 +865,6 @@ logs/
 ```
 
 **Saved to**: `logs/{experiment}/hp_config_{N}/tokens_used.json` (one entry per attack)
-
-### Buffer Metrics ([buffer_metrics.py](Sangria/buffer_metrics.py))
-
-Tracks SSH buffer management performance:
-
-```json
-{
-  "total_commands": 50,
-  "buffer_clears": 50,
-  "clear_rate_pct": 100.0,
-  "total_bytes_cleared": 25000,
-  "avg_bytes_per_clear": 500.0,
-  "timing_data": [
-    {
-      "command_num": 1,
-      "command_len": 25,
-      "buffer_clear_ms": 0.05,
-      "send_ms": 2.3,
-      "wait_ms": 523.4,
-      "total_ms": 525.8,
-      "response_len": 150
-    }
-  ]
-}
-```
-
-**Purpose**: Validate desynchronization fix (buffer cleared after each command).
 
 ---
 
@@ -1114,23 +1063,7 @@ provide_honeypot_credentials = True
 
 ## Technical Challenges & Solutions
 
-### Challenge 1: SSH Buffer Desynchronization
-
-**Problem**: pexpect buffer persisted between commands, causing LLM to see previous responses.
-
-**Symptoms**:
-- 84% of responses <1ms (impossible for LLM generation)
-- Commands receiving wrong/stale output
-- Cascading errors in attacker reasoning
-
-**Solution** ([terminal_io.py:36-141](Sangria/terminal_io.py#L36-L141)):
-1. Wait 500ms after sending command (Beelzebub LLM generation time)
-2. Capture response from buffer
-3. **Clear buffer AFTER capturing**, not before next send
-
-**Result**: 100% of commands receive correct, fresh responses.
-
-### Challenge 2: Configuration Novelty
+### Challenge 1: Configuration Novelty
 
 **Problem**: RAG retrieval alone insufficient to prevent repetitive configurations.
 
@@ -1140,7 +1073,7 @@ provide_honeypot_credentials = True
 - Reject if any similarity > threshold
 - Force LLM to regenerate (up to 3 attempts)
 
-### Challenge 3: LLM Refusal
+### Challenge 2: LLM Refusal
 
 **Problem**: OpenAI models sometimes refuse offensive security tasks.
 
@@ -1149,7 +1082,7 @@ provide_honeypot_credentials = True
 - Sandboxed environment description
 - Fallback to terminate gracefully ([sangria.py:118-120](Sangria/sangria.py#L118-L120))
 
-### Challenge 4: Token Costs
+### Challenge 3: Token Costs
 
 **Optimizations**:
 1. **OpenAI Prompt Caching**: System prompt cached across iterations
